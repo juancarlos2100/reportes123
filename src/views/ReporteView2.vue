@@ -12,12 +12,6 @@
       <label for="fechaFin" style="font-size: 20px; font-weight: bold; padding-right: 10px;">Fecha de Fin:</label>
       <input type="date" v-model="fechaFin" style="margin-right:10px;">
 
-      <label for="idCuenta" style="font-size: 20px; font-weight: bold; padding-right: 10px;">ID Cuenta:</label>
-      <input type="text" v-model="idTipo" style="margin-right:10px;">
-
-      <label for="estatus" style="font-size: 20px; font-weight: bold; padding-right: 10px;">Estatus:</label>
-      <input type="text" v-model="estatus" style="margin-right:10px;">
-
       <button class="boton-filtrar" type="submit">Filtrar</button>
     </form>
     <button class="boton-descargar" @click="downloadPDF">Descargar PDF</button>
@@ -25,7 +19,7 @@
       <thead>
         <tr>
           <!--<th>ID Transaccion</th>-->
-          <th>ID Cuenta</th>
+          <!--<th>ID Cuenta</th>-->
           <th>Fecha Contable</th>
           <!--<th>Monto</th>-->
           <th>Saldo</th>
@@ -37,7 +31,7 @@
       <tbody>
         <tr v-for="(adeudo, index) in resultados" :key="index">
           <!--<td>{{ adeudo['id_transaccion'] }}</td>-->
-          <td>{{ adeudo['id_cuenta'] }}</td>
+          <!--<td>{{ adeudo['id_cuenta'] }}</td>-->
           <td>{{ adeudo['fecha_contable'] }}</td>
            <!--<td>{{ adeudo['monto'] }}</td>-->
           <td>${{ adeudo['saldo'] }}</td>
@@ -56,17 +50,13 @@
         </tr>
       </thead>
     <tbody>
-    <tr v-for="(saldo, banco) in totalesPorBanco" :key="banco">
-      <td>${{ banco }}</td>
-      <td>${{ saldo.toFixed(2) }}</td>
-    </tr>
+      <tr v-for="(saldo, banco) in totalesPorBanco" :key="banco">
+      <td>{{ banco }}</td>
+      <td>${{ Number(saldo).toFixed(2) }}</td>
+</tr>
   </tbody>
 </table>
-    <div style="display: flex; justify-content: center; width: 25%; height: 25%;">
-      <div style="width: 120%; height: 120%;">
-        <canvas id="myChartPositive"></canvas>
-      </div>
-    </div>
+
   </div>
 </template>
 
@@ -112,37 +102,34 @@ export default {
       });
   },
   methods: {
-    filtrarDatos() {
-      let resultadosFiltrados = this.resultados;
+  filtrarDatos() {
+    let resultadosFiltrados = this.resultados;
 
-      if (this.idTipo) {
-        resultadosFiltrados = resultadosFiltrados.filter(adeudo => adeudo['id_cuenta'] === this.idTipo);
-      } else if (this.estatus) {
-        resultadosFiltrados = resultadosFiltrados.filter(adeudo => adeudo['estado'] === this.estatus);
-      } else if (this.fechaInicio && this.fechaFin) {
-        resultadosFiltrados = resultadosFiltrados.filter(adeudo => {
-          const fechaContable = new Date(adeudo['fecha_contable']);
-          const fechaInicio = new Date(this.fechaInicio);
-          const fechaFin = new Date(this.fechaFin);
-          return fechaContable >= fechaInicio && fechaContable <= fechaFin;
-        });
-      }
+    if (this.idTipo) {
+      resultadosFiltrados = resultadosFiltrados.filter(adeudo => adeudo['id_cuenta'] === this.idTipo);
+    } else if (this.estatus) {
+      resultadosFiltrados = resultadosFiltrados.filter(adeudo => adeudo['estado'] === this.estatus);
+    } else if (this.fechaInicio && this.fechaFin) {
+      resultadosFiltrados = resultadosFiltrados.filter(adeudo => {
+        const fechaContable = new Date(adeudo['fecha_contable']);
+        const fechaInicio = new Date(this.fechaInicio);
+        const fechaFin = new Date(this.fechaFin);
+        return fechaContable >= fechaInicio && fechaContable <= fechaFin;
+      });
+    }
 
-      this.resultados = resultadosFiltrados;
-      this.calcularTotalesPorBanco();
-    },
-    calcularTotalesPorBanco() {
-      this.totalesPorBanco = this.resultados.reduce((totales, adeudo) => {
-        const banco = adeudo['banco'];
-        const saldo = Number(adeudo['saldo']);
-        if (!totales[banco]) {
-          totales[banco] = 0;
-        }
-        totales[banco] += saldo;
-        return totales;
-      }, {});
-    },
-    downloadPDF() {
+    this.resultados = resultadosFiltrados;
+    this.calcularUltimoSaldoPorBanco();
+  },
+
+  calcularUltimoSaldoPorBanco() {
+    this.totalesPorBanco = this.resultados.reduce((totales, adeudo) => {
+      totales[adeudo['banco']] = adeudo['saldo'];
+      return totales;
+    }, {});
+  },
+},
+  downloadPDF() {
       const pdfOptions = {
         orientation: "portrait",
         unit: "mm",
@@ -169,8 +156,6 @@ export default {
           console.error('Error al capturar la representación gráfica de la tabla:', error);
         });
     },
-    
-  },
 };
 </script>
 
@@ -200,7 +185,7 @@ table {
 
 td:first-child {
   /* Establece el ancho de la primera columna */
-  width: 100px;  /* Ajusta este valor según tus necesidades */
+  width: 300px;  /* Ajusta este valor según tus necesidades */
 }
 
 

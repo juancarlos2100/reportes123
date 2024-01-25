@@ -25,10 +25,10 @@
     <table>
       <thead>
         <tr>
-          <th>ID Proveedor</th>
-          <th>Estatus</th>
-          <th>Factura</th>
-          <th>Folio</th>
+           <!--<th>ID Proveedor</th>-->
+          <!--<th>Estatus</th>-->
+          <!--<th>Factura</th>-->
+          <th>Folio-Factura</th>
           <th>Saldo</th>
           <th>Fecha</th>
           <th>Nombre</th>
@@ -36,9 +36,9 @@
       </thead>
       <tbody>
         <tr v-for="(adeudo, index) in resultados" :key="index">
-          <td>{{ adeudo['id_proveedor'] }}</td>
-          <td>{{ adeudo['estatus'] }}</td>
-          <td>{{ adeudo['id_factura'] }}</td>
+          <!--<td>{{ adeudo['id_proveedor'] }}</td>-->
+          <!--<td>{{ adeudo['estatus'] }}</td>-->
+          <!--<td>{{ adeudo['id_factura'] }}</td>-->
           <td>{{ adeudo['folio'] }}</td>
           <td>${{ adeudo['saldo'] }}</td>
           <td>{{ adeudo['fecha_creacion'] }}</td>
@@ -190,7 +190,7 @@ table {
 
 td:first-child {
   /* Establece el ancho de la primera columna */
-  width: 100px;  /* Ajusta este valor según tus necesidades */
+  width: 200px;  /* Ajusta este valor según tus necesidades */
 }
 
 
@@ -255,3 +255,30 @@ th {
 </style>
 
 
+downloadPDF() {
+  const pdfOptions = {
+    orientation: "portrait",
+    unit: "mm",
+    format: "letter",
+  };
+
+  const doc = new jsPDF(pdfOptions);
+
+  html2canvas(this.$el, { scale: 3 })
+    .then(canvas => {
+      let imgData = canvas.toDataURL('image/jpeg', 0.1);
+
+      let imgWidth = 200;
+      let imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      let marginLeft = (doc.internal.pageSize.getWidth() - imgWidth) / 2;
+      let marginTop = 10;
+
+      doc.addImage(imgData, 'JPEG', marginLeft, marginTop, imgWidth, imgHeight);
+
+      doc.save('informe_financiero.pdf');
+    })
+    .catch(error => {
+      console.error('Error al capturar la representación gráfica de la tabla:', error);
+    });
+},
