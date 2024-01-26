@@ -102,25 +102,22 @@ export default {
       });
   },
   methods: {
-  filtrarDatos() {
-    let resultadosFiltrados = this.resultados;
+    filtrarDatos() {
+  let resultadosFiltrados = this.resultados;
 
-    if (this.idTipo) {
-      resultadosFiltrados = resultadosFiltrados.filter(adeudo => adeudo['id_cuenta'] === this.idTipo);
-    } else if (this.estatus) {
-      resultadosFiltrados = resultadosFiltrados.filter(adeudo => adeudo['estado'] === this.estatus);
-    } else if (this.fechaInicio && this.fechaFin) {
-      resultadosFiltrados = resultadosFiltrados.filter(adeudo => {
-        const fechaContable = new Date(adeudo['fecha_contable']);
-        const fechaInicio = new Date(this.fechaInicio);
-        const fechaFin = new Date(this.fechaFin);
-        return fechaContable >= fechaInicio && fechaContable <= fechaFin;
-      });
-    }
+  if (this.fechaInicio && this.fechaFin) {
+    resultadosFiltrados = resultadosFiltrados.filter(adeudo => {
+      const fechaContable = new Date(adeudo['fecha_contable']);
+      const fechaInicio = new Date(this.fechaInicio);
+      const fechaFin = new Date(this.fechaFin);
+      return fechaContable >= fechaInicio && fechaContable <= fechaFin;
+    });
+  }
 
-    this.resultados = resultadosFiltrados;
-    this.calcularUltimoSaldoPorBanco();
-  },
+  this.resultados = resultadosFiltrados;
+  this.calcularUltimoSaldoPorBanco();
+},
+
 
   calcularUltimoSaldoPorBanco() {
     this.totalesPorBanco = this.resultados.reduce((totales, adeudo) => {

@@ -4,58 +4,67 @@
       <img class="imagen-encabezado" src="@/assets/logok.png" alt="Descripción de la imagen">
     </header>
     <h1>Reporte Operativo</h1>
-    <h2> Transacciones Bancos</h2>
+    <h2> Inventario Gasolina</h2>
+    <form @submit.prevent="filtrarDatos">
+      <label for="fechaInicio" style="font-size: 20px; font-weight: bold; padding-right: 10px;" >Fecha de Inicio:</label>
+      <input type="date" v-model="fechaInicio" style="margin-right:10px;">
+      
+      <label for="fechaFin" style="font-size: 20px; font-weight: bold; padding-right: 10px;">Fecha de Fin:</label>
+      <input type="date" v-model="fechaFin" style="margin-right:10px;">
+
+      <button class="boton-filtrar" type="submit">Filtrar</button>
+    </form>
     <button class="boton-descargar" @click="downloadPDF">Descargar PDF</button>
     <table>
       <thead>
         <tr>
-          <th>ID Transaccion</th>
-          <th>id Cuenta</th>
-          <th>ID_Tipo</th>
-          <th>Fecha Contable</th>
-          <th>Abono</th>
-          <th>Saldo</th>
-          <th>Descripcion</th>
-          <th>Status</th>
-          <th>Banco</th>
+          <th>id_tanque</th>
+          <th>nombre</th>
+          <th>fin_volumen</th>
+          <th>precio_venta</th>
+          <th>precio_compra</th>
+          <th>total_compra</th>
+          <th>total_venta</th>
+          <th>utilidad</th>
         </tr>
       </thead>
       <tbody>
         <tr v-for="(adeudo, index) in resultados" :key="index">
-          <td>{{ adeudo['id_adeudo'] }}</td>
-          <td>{{ adeudo['serie'] }}</td>
-          <td>{{ adeudo['folio'] }}</td>
-          <td>{{ adeudo['fecha_creacion'] }}</td>
-          <td>{{ adeudo['cargo'] }}</td>
-          <td>{{ adeudo['abono'] }}</td>
-          <td>{{ adeudo['saldo'] }}</td>
-          <td>{{ adeudo['vencimiento'] }}</td>
-          <td>{{ adeudo['status'] }}</td>
+          <td>{{ adeudo['id_tanque'] }}</td>
+          <td>{{ adeudo['nombre'] }}</td>
+          <td>{{ adeudo['fin_volumen'] }}</td>
+          <td>{{ adeudo['precio_venta'] }}</td>
+          <td>${{ adeudo['precio_compra'] }}</td>
+          <td>{{ adeudo['total_compra'] }}</td>
+          <td>{{ adeudo['total_venta'] }}</td>
+          <td>{{ adeudo['utilidad'] }}</td>
         </tr>
       </tbody>
     </table>
-    <!-- Nueva tabla con las sumas totales -->
+    <br>
     <table class="tabla-totales">
       <thead>
         <tr>
-          <th>Total Cargo</th>
-          <th>Total Abono</th>
-          <th>Total Saldo</th>
+          <th>nombre</th>
+          <th>precio_venta</th>
+          <th>precio_compra</th>
+          <th>utilidad</th>
         </tr>
+        
       </thead>
       <tbody>
-        <tr>
-          <td>{{ totalCargo.toFixed(2) }}</td>
-          <td>{{ totalAbono.toFixed(2) }}</td>
-          <td>{{ totalSaldo.toFixed(2) }}</td>
+        <tr v-for="(adeudo, index) in resultados" :key="index">
+          <td>{{ adeudo['nombre'] }}</td>
+          <td>{{ adeudo['precio_venta'] }}</td>
+          <td>${{ adeudo['precio_compra'] }}</td>
+          <td>{{ adeudo['utilidad'] }}</td>
         </tr>
       </tbody>
     </table>
-    <div style="display: flex; justify-content: center; width: 25%; height: 25%;">
-      <div style="width: 120%; height: 120%;">
-        <canvas id="myChartPositive"></canvas>
-      </div>
-    </div>
+    
+    <!-- Nueva tabla con las sumas totales -->
+
+
   </div>
 </template>
 
@@ -69,25 +78,28 @@ export default {
   data() {
     return {
       resultados: [],
+      idTipo: null,
+      estatus: null,
+      fechaInicio: null,
+      fechaFin: null,
+      totalesPorBanco: {},
+      totalUtilidad: 0,
     };
   },
   computed: {
-    totalCargo() {
-      return this.resultados.reduce((total, adeudo) => total + Number(adeudo.cargo), 0);
+    calcularTotalUtilidad() {
+      return this.resultados.reduce((total, adeudo) => total + adeudo.utilidad, 0);
     },
-    totalAbono() {
-      return this.resultados.reduce((total, adeudo) => total + Number(adeudo.abono), 0);
-    },
-    totalSaldo() {
-  return this.resultados.reduce((total, resu) => total + Number(resu.cargo) - Number(resu.abono), 0);
-}
+
   },
   mounted() {
     axios
-      .get("https://sistemas-oktan.com/admin/get.php/transaccionesbanco")
+      .get("https://sistemas-oktan.com/admin/get.php/invgasolina")
       .then((response) => {
         this.resultados = response.data.data;
+        this.totalUtilidad = this.calcularTotalUtilidad; // Añade esta línea
         console.log(this.resultados);
+        this.calcularTotalesPorBanco();
         this.generateChart();
       })
       .catch((error) => {
@@ -96,7 +108,7 @@ export default {
   },
   
   methods: {
-    downloadPDF() {
+      downloadPDF() {
       const pdfOptions = {
         orientation: "portrait",
         unit: "mm",
@@ -122,13 +134,14 @@ export default {
         .catch(error => {
           console.error('Error al capturar la representación gráfica de la tabla:', error);
         });
-    }
+    },
 
 
+},
 
-  },
 };
 </script>
+
 
 
 <style scoped>
@@ -144,16 +157,18 @@ table {
   margin-top: 20px; /* Ajusta según sea necesario */
 }
 .tabla-totales {
-  width: 50%; /* Cambia esto al ancho que desees */
+  width: 700px; /* Cambia esto al ancho que desees */
   height: auto; /* Cambia esto a la altura que desees */
   margin-left: auto;
   margin-right: 0;
   
+  
 }
+
 
 td:first-child {
   /* Establece el ancho de la primera columna */
-  width: 300px;  /* Ajusta este valor según tus necesidades */
+  width: 200px;  /* Ajusta este valor según tus necesidades */
 }
 
 
@@ -198,8 +213,21 @@ th {
   font-family: "Roboto", sans-serif;
   font-size: 18px;
 }
+.boton-filtrar {
+  background-color: #53980d; /* Verde */
+  width: 100px;
+  height: 40px;
+  border-width: thin;
+  border: 1px solid #3b6e22;
+  color: white;
+
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 20px;
+  border-radius: 25px;
+  margin-top: 50px;
+  font-family: "Roboto", sans-serif;
+  font-size: 18px;
+}
 </style>
-
-
-
-

@@ -4,53 +4,61 @@
       <img class="imagen-encabezado" src="@/assets/logok.png" alt="Descripción de la imagen">
     </header>
     <h1>Reporte Operativo</h1>
-    <h2> Saldos Proveedores</h2>
-    <button @click="downloadPDF">Descargar PDF</button>
+    <h2>Efectivo por depositar</h2>
+    <form @submit.prevent="filtrarDatos">
+      <label for="fechaInicio" style="font-size: 20px; font-weight: bold; padding-right: 10px;" >Fecha de Inicio:</label>
+      <input type="date" v-model="fechaInicio" style="margin-right:10px;">
+      
+      <label for="fechaFin" style="font-size: 20px; font-weight: bold; padding-right: 10px;">Fecha de Fin:</label>
+      <input type="date" v-model="fechaFin" style="margin-right:10px;">
+
+
+      <button class="boton-filtrar" type="submit">Filtrar</button>
+    </form>
+    <button class="boton-descargar" @click="downloadPDF">Descargar PDF</button>
     <table>
       <thead>
         <tr>
-          <th>ID Adeudo</th>
-          <th>Serie</th>
-          <th>Folio</th>
-          <th>Fecha Creación</th>
-          <th>Cargo</th>
-          <th>Abono</th>
-          <th>Saldo</th>
-          <th>Vencimiento</th>
-          <th>Status</th>
+           <!--<th>ID Proveedor</th>-->
+          <!--<th>Estatus</th>-->
+          <!--<th>id_turno</th>-->
+          <th>Fecha</th>
+          <th>monto</th>
+          <th>monto depositado</th>
+          <!--<th>forma_pago</th>-->
+          <th>diferencia</th>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="(resu, index) in resultados" :key="index">
-          <td>{{ resu['id_adeudo'] }}</td>
-          <td>{{ resu['serie'] }}</td>
-          <td>{{ resu['folio'] }}</td>
-          <td>{{ resu['fecha_creacion'] }}</td>
-          <td>{{ resu['cargo'] }}</td>
-          <td>{{ resu['abono'] }}</td>
-          <td>{{ resu['saldo'] }}</td>
-          <td>{{ resu['vencimiento'] }}</td>
-          <td>{{ resu['status'] }}</td>
+        <tr v-for="(adeudo, index) in resultados" :key="index">
+          <!--<td>{{ adeudo['id_turno'] }}</td>-->
+          <td>{{ adeudo['fecha'] }}</td>
+          <td>{{ adeudo['monto'] }}</td>
+          <td>${{ adeudo['monto_depositado'] }}</td>
+          <!--<td>{{ adeudo['forma_pago'] }}</td>-->
+          <td>${{ adeudo['diferencia'] }}</td>
         </tr>
       </tbody>
     </table>
     <!-- Nueva tabla con las sumas totales -->
     <table class="tabla-totales">
-      <thead>
-        <tr>
-          <th>Total Cargo</th>
-          <th>Total Abono</th>
-          <th>Total Saldo</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>{{ totalCargo.toFixed(2) }}</td>
-          <td>{{ totalAbono.toFixed(2) }}</td>
-          <td>{{ totalSaldo.toFixed(2) }}</td>
-        </tr>
-      </tbody>
-    </table>
+    <thead>
+      <tr>
+        <th>Efectivo por depositar</th> <!-- Cambiado 'Factura' por 'Efectivo por depositar' -->
+        <th>Importe</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr v-for="(adeudo, index) in resultadosFiltrados" :key="index">
+        <td>{{ adeudo['id_turno'] }}</td> <!-- Cambiado 'total.factura.toFixed(2)' por 'adeudo['id_turno']' -->
+        <td>${{ adeudo['diferencia'] }}</td> <!-- Cambiado 'total.saldo.toFixed(2)' por 'adeudo['diferencia']' -->
+      </tr>
+      <tr>
+        <td><strong>Total</strong></td>
+        <td>${{ totalImporte.toFixed(2) }}</td> <!-- Nueva fila para el total -->
+      </tr>
+    </tbody>
+  </table>
     <div style="display: flex; justify-content: center; width: 25%; height: 25%;">
       <div style="width: 120%; height: 120%;">
         <canvas id="myChartPositive"></canvas>
@@ -61,7 +69,7 @@
 
 <script>
 import axios from "axios";
-import { Chart } from 'chart.js';
+//import { Chart } from 'chart.js';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
@@ -69,73 +77,49 @@ export default {
   data() {
     return {
       resultados: [],
+      resultadosFiltrados: [], // Nueva propiedad de datos
+      fechaInicio: null,
+      fechaFin: null,
+      totalImporte: 0,
+
     };
-  },
-  computed: {
-    totalCargo() {
-      return this.resultados.reduce((total, resu) => total + Number(resu.cargo), 0);
-    },
-    totalAbono() {
-      return this.resultados.reduce((total, resu) => total + Number(resu.abono), 0);
-    },
-    totalSaldo() {
-      return this.resultados.reduce((total, resu) => total + Number(resu.saldo), 0);
-    },
   },
   mounted() {
     axios
-      .get("https://sistemas-oktan.com/admin/get.php/adeudopagoprovedores")
-      .then((response) => {
-        this.resultados = response.data.data;
-        console.log(this.resultados);
-        this.generateChart();
-      })
-      .catch((error) => {
-        console.error("Error al obtener datos de la API:", error);
-      });
+        .get("https://sistemas-oktan.com/admin/get.php/depositoefectivo")
+        .then((response) => {
+          this.resultados = response.data.data.map(resu => {
+            return {
+              ...resu,
+              id_turno: resu.id_turno || 'NULL'
+            };
+          });
+          console.log(this.resultados);
+          this.generateChart();
+        })
+  .catch((error) => {
+    console.error("Error al obtener datos de la API:", error);
+  });
   },
   methods: {
-    generateChart() {
-      let statusCounts = this.resultados.reduce((counts, resu) => {
-        counts[resu.status] = (counts[resu.status] || 0) + 1;
-        return counts;
-      }, {});
+    filtrarDatos() {
+      this.resultadosFiltrados = this.resultados; // Usa la propiedad de datos en lugar de una variable local
 
-      let statusDescriptions = {
-        1: 'Pagado',
-        2: 'Pendiente',
-        3: 'Vencido'
-      };
+      if (this.fechaInicio && this.fechaFin) {
+        this.resultadosFiltrados = this.resultadosFiltrados.filter(adeudo => {
+          const fechaContable = new Date(adeudo['fecha']); // Cambiado 'fecha_contable' por 'fecha'
+          const fechaInicio = new Date(this.fechaInicio);
+          const fechaFin = new Date(this.fechaFin);
+          return fechaContable >= fechaInicio && fechaContable <= fechaFin;
+        });
+      }
 
-      let statuses = Object.keys(statusCounts).map(status => statusDescriptions[status]);
-      let counts = Object.values(statusCounts);
-
-      let ctx = document.getElementById('myChartPositive').getContext('2d');
-      new Chart(ctx, {
-        type: 'pie',
-        data: {
-          labels: statuses,
-          datasets: [{
-            data: counts,
-            backgroundColor: ['#ff6384', '#36a2eb', '#cc65fe', '#ffce56'],
-            hoverOffset: 4
-          }]
-        },
-        options: {
-          responsive: true,
-          plugins: {
-            legend: {
-              position: 'top',
-            },
-            title: {
-              display: true,
-              text: 'Proporción de estados de adeudo'
-            }
-          },
-        },
-      });
+      // Calcula el total de los importes filtrados
+      this.totalImporte = this.resultadosFiltrados.reduce((total, adeudo) => total + parseFloat(adeudo['diferencia']), 0);
     },
-
+      calcularTotalImporte(resultados) {
+      return resultados.reduce((total, adeudo) => total + parseFloat(adeudo['diferencia']), 0);
+    },
     downloadPDF() {
       const pdfOptions = {
         orientation: "portrait",
@@ -148,21 +132,29 @@ export default {
       html2canvas(this.$el, { scale: 3 })
         .then(canvas => {
           let imgData = canvas.toDataURL('image/jpeg', 0.1);
+
           let imgWidth = 200;
           let imgHeight = (canvas.height * imgWidth) / canvas.width;
+
           let marginLeft = (doc.internal.pageSize.getWidth() - imgWidth) / 2;
           let marginTop = 10;
 
           doc.addImage(imgData, 'JPEG', marginLeft, marginTop, imgWidth, imgHeight);
+
           doc.save('informe_financiero.pdf');
         })
         .catch(error => {
           console.error('Error al capturar la representación gráfica de la tabla:', error);
         });
-    }
+    },
+
+
+
+    // ...resto de métodos...
   },
 };
 </script>
+
 
 
 <style scoped>
@@ -178,16 +170,18 @@ table {
   margin-top: 20px; /* Ajusta según sea necesario */
 }
 .tabla-totales {
-  width: 50%; /* Cambia esto al ancho que desees */
+  width: 700px; /* Cambia esto al ancho que desees */
   height: auto; /* Cambia esto a la altura que desees */
   margin-left: auto;
   margin-right: 0;
   
+  
 }
+
 
 td:first-child {
   /* Establece el ancho de la primera columna */
-  width: 300px;  /* Ajusta este valor según tus necesidades */
+  width: 200px;  /* Ajusta este valor según tus necesidades */
 }
 
 
@@ -214,8 +208,40 @@ th {
   margin-top: auto;
   
 }
+.boton-descargar {
+  background-color: #53980d; /* Verde */
+  width: 150px;
+  height: 40px;
+  border-width: thin;
+  border: 1px solid #3b6e22;
+  color: white;
+
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  border-radius: 25px;
+  margin-top: 10px;
+  padding-left: 10px;
+  font-family: "Roboto", sans-serif;
+  font-size: 18px;
+}
+.boton-filtrar {
+  background-color: #53980d; /* Verde */
+  width: 100px;
+  height: 40px;
+  border-width: thin;
+  border: 1px solid #3b6e22;
+  color: white;
+
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 20px;
+  border-radius: 25px;
+  margin-top: 50px;
+  font-family: "Roboto", sans-serif;
+  font-size: 18px;
+}
 </style>
-
-
-
 

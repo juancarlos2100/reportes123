@@ -255,30 +255,3 @@ th {
 </style>
 
 
-downloadPDF() {
-  const pdfOptions = {
-    orientation: "portrait",
-    unit: "mm",
-    format: "letter",
-  };
-
-  const doc = new jsPDF(pdfOptions);
-
-  html2canvas(this.$el, { scale: 3 })
-    .then(canvas => {
-      let imgData = canvas.toDataURL('image/jpeg', 0.1);
-
-      let imgWidth = 200;
-      let imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-      let marginLeft = (doc.internal.pageSize.getWidth() - imgWidth) / 2;
-      let marginTop = 10;
-
-      doc.addImage(imgData, 'JPEG', marginLeft, marginTop, imgWidth, imgHeight);
-
-      doc.save('informe_financiero.pdf');
-    })
-    .catch(error => {
-      console.error('Error al capturar la representación gráfica de la tabla:', error);
-    });
-},

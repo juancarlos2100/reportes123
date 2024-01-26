@@ -5,9 +5,9 @@
     <router-link to="/reporte1">Productos</router-link>|
     <router-link to="/reporte2">Bancos</router-link>|
     <router-link to="/reporte3">Saldos Proveedores</router-link>|
-    <router-link to="/reporte4">Reporte5</router-link>|
-    <router-link to="/reporte5">Reporte6</router-link>|
-    <router-link to="/reporte6">Reporte7</router-link>|
+    <router-link to="/reporte4">Cortes</router-link>|
+    <router-link to="/reporte5">Clientes por Cobrar</router-link>|
+    <router-link to="/reporte6">Inv Gasolina</router-link>|
     <router-link to="/reporte7">Reporte8</router-link>|
     <router-link to="/reporte8">Reporte9</router-link>|
     <router-link to="/reporte9">Reporte9</router-link>|
