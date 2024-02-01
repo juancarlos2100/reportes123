@@ -13,15 +13,11 @@
       <label for="fechaFin" style="font-size: 20px; font-weight: bold; padding-right: 10px;">Fecha de Fin:</label>
       <input type="date" v-model="fechaFin" style="margin-right:10px;">
 
-      <label for="idProveedor" style="font-size: 20px; font-weight: bold; padding-right: 10px;">ID Proveedor:</label>
-      <input type="text" v-model="idTipo" style="margin-right:10px;">
-
-      <label for="estatus" style="font-size: 20px; font-weight: bold; padding-right: 10px;">Estatus:</label>
-      <input type="text" v-model="estatus" style="margin-right:10px;">
 
       <button class="boton-filtrar" type="submit">Filtrar</button>
     </form>
     <button class="boton-descargar" @click="downloadPDF">Descargar PDF</button>
+    <button class="boton-descargar" @click="downloadPDF">Descargar XLS</button>
     <table>
       <thead>
         <tr>
@@ -40,7 +36,7 @@
           <!--<td>{{ adeudo['estatus'] }}</td>-->
           <!--<td>{{ adeudo['id_factura'] }}</td>-->
           <td>{{ adeudo['folio'] }}</td>
-          <td>${{ adeudo['saldo'] }}</td>
+          <td>${{ parseFloat(adeudo['saldo']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
           <td>{{ adeudo['fecha_creacion'] }}</td>
           <td>{{ adeudo['nombre'] }}</td>
         </tr>

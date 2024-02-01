@@ -5,6 +5,7 @@
     </header>
     <h1>Reporte Operativo</h1>
     <h2>Clientes por cobrar</h2>
+    
     <form @submit.prevent="filtrarDatos">
       <label for="fechaInicio" style="font-size: 20px; font-weight: bold; padding-right: 10px;" >Fecha de Inicio:</label>
       <input type="date" v-model="fechaInicio" style="margin-right:10px;">
@@ -16,6 +17,7 @@
       <button class="boton-filtrar" type="submit">Filtrar</button>
     </form>
     <button class="boton-descargar" @click="downloadPDF">Descargar PDF</button>
+    <button class="boton-descargar" @click="downloadPDF">Descargar XLS</button>
 
     <table>
       <thead>
@@ -31,9 +33,9 @@
           <!--<td>{{ adeudo['id_turno'] }}</td>-->
           <td>{{ adeudo['id_entidad'] }}</td>
           <td>{{ adeudo['fecha'] }}</td>
-          <td>${{ adeudo['saldo'] }}</td>
+          <td>${{ parseFloat(adeudo['saldo']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
           <!--<td>{{ adeudo['forma_pago'] }}</td>-->
-          <td>${{ adeudo['razon_social'] }}</td>
+          <td>{{ adeudo['razon_social'] }}</td>
         </tr>
       </tbody>
     </table>
@@ -61,7 +63,7 @@
         <tr v-for="(adeudo, index) in resultadosSegundaTabla" :key="index">
           <td>{{ adeudo['id_entidad'] }}</td>
           <td>{{ adeudo['fecha_creacion'] }}</td>
-          <td>${{ adeudo['saldo'] }}</td>
+          <td>${{ parseFloat(adeudo['saldo']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
           <td>{{ adeudo['nombre'] }}</td>
          
           

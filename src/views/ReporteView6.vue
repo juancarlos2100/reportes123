@@ -15,6 +15,7 @@
       <button class="boton-filtrar" type="submit">Filtrar</button>
     </form>
     <button class="boton-descargar" @click="downloadPDF">Descargar PDF</button>
+    <button class="boton-descargar" @click="downloadPDF">Descargar XLS</button>
     <table>
       <thead>
         <tr>
@@ -35,9 +36,9 @@
           <td>{{ adeudo['fin_volumen'] }}</td>
           <td>{{ adeudo['precio_venta'] }}</td>
           <td>${{ adeudo['precio_compra'] }}</td>
-          <td>{{ adeudo['total_compra'] }}</td>
-          <td>{{ adeudo['total_venta'] }}</td>
-          <td>{{ adeudo['utilidad'] }}</td>
+          <td>${{ parseFloat(adeudo['total_compra']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
+          <td>${{ parseFloat(adeudo['total_venta']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
+          <td>${{ parseFloat(adeudo['utilidad']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
         </tr>
       </tbody>
     </table>
@@ -57,7 +58,7 @@
           <td>{{ adeudo['nombre'] }}</td>
           <td>{{ adeudo['precio_venta'] }}</td>
           <td>${{ adeudo['precio_compra'] }}</td>
-          <td>{{ adeudo['utilidad'] }}</td>
+          <td>${{ parseFloat(adeudo['utilidad']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
         </tr>
       </tbody>
     </table>

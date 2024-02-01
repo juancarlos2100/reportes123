@@ -16,6 +16,7 @@
       <button class="boton-filtrar" type="submit">Filtrar</button>
     </form>
     <button class="boton-descargar" @click="downloadPDF">Descargar PDF</button>
+    <button class="boton-descargar" @click="downloadPDF">Descargar XLS</button>
     <table>
       <thead>
         <tr>
@@ -33,10 +34,9 @@
         <tr v-for="(adeudo, index) in resultados" :key="index">
           <!--<td>{{ adeudo['id_turno'] }}</td>-->
           <td>{{ adeudo['fecha'] }}</td>
-          <td>{{ adeudo['monto'] }}</td>
-          <td>${{ adeudo['monto_depositado'] }}</td>
-          <!--<td>{{ adeudo['forma_pago'] }}</td>-->
-          <td>${{ adeudo['diferencia'] }}</td>
+          <td>{{ parseFloat(adeudo['monto']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
+          <td>${{ parseFloat(adeudo['monto_depositado']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
+          <td>${{ parseFloat(adeudo['diferencia']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>>
         </tr>
       </tbody>
     </table>

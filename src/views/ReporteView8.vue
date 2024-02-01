@@ -1,5 +1,6 @@
 <template>
     <div id="resultado">
+      <H3>Esto es una prueba, IGNORAR</H3>
       <header>
         <img class="imagen-encabezado" src="@/assets/logok.png" alt="Descripción de la imagen">
       </header>
@@ -15,6 +16,7 @@
       <button class="boton-filtrar" type="submit">Filtrar</button>
     </form>
       <button class="boton-descargar" @click="downloadPDF">Descargar PDF</button>
+      
       <table>
         <thead>
           <tr>

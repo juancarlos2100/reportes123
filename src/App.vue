@@ -8,10 +8,10 @@
     <router-link to="/reporte4">Cortes</router-link>|
     <router-link to="/reporte5">Clientes por Cobrar</router-link>|
     <router-link to="/reporte6">Inv Gasolina</router-link>|
-    <router-link to="/reporte7">Reporte8</router-link>|
+    <router-link to="/reporte7">Inv Aceites</router-link>|
     <router-link to="/reporte8">Reporte9</router-link>|
-    <router-link to="/reporte9">Reporte9</router-link>|
-    <router-link to="/reporte10">Reporte10</router-link>|
+    <router-link to="/reporte9">DESGLOSE</router-link>|
+    <router-link to="/reporte10">Resumen General</router-link>|
   </nav>
   <router-view/>
 </template>

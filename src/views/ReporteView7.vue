@@ -4,69 +4,78 @@
       <img class="imagen-encabezado" src="@/assets/logok.png" alt="Descripción de la imagen">
     </header>
     <h1>Reporte Operativo</h1>
-    <h2>Transacciones Proveedores</h2>
+    <h2> Inventario Aceites</h2>
     <form @submit.prevent="filtrarDatos">
+      <label for="idTurno" style="font-size: 20px; font-weight: bold; padding-right: 10px;">ID Turno:</label>
+      <input type="text" v-model="idTurno" style="margin-right:10px;">
+
       <label for="fechaInicio" style="font-size: 20px; font-weight: bold; padding-right: 10px;" >Fecha de Inicio:</label>
       <input type="date" v-model="fechaInicio" style="margin-right:10px;">
       
       <label for="fechaFin" style="font-size: 20px; font-weight: bold; padding-right: 10px;">Fecha de Fin:</label>
       <input type="date" v-model="fechaFin" style="margin-right:10px;">
 
-      <label for="idTipo" style="font-size: 20px; font-weight: bold; padding-right: 10px;">ID Tipo:</label>
-      <input type="text" v-model="idTipo" style="margin-right:10px;">
-
-      <label for="estatus" style="font-size: 20px; font-weight: bold; padding-right: 10px;">Estatus:</label>
-      <input type="text" v-model="estatus" style="margin-right:10px;">
-
       <button class="boton-filtrar" type="submit">Filtrar</button>
     </form>
     <button class="boton-descargar" @click="downloadPDF">Descargar PDF</button>
+    <button class="boton-descargar" @click="downloadPDF">Descargar XLS</button>
     <table>
       <thead>
         <tr>
-          <th>ID Transaccion</th>
-          <th>id Tipo</th>
-          <th>Fecha</th>
-          <th>id proveedor</th>
-          <th>Monto</th>
-          <th>Descripcion</th>
-          <th>Estatus</th>
+          <th>id_Producto</th>
+          <th>id_turno</th>
+          <th>Nombre</th>
+          <th>cantidad</th>
+          <th>precio</th>
+          <th>total</th>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="(adeudo, index) in resultados" :key="index">
-          <td>{{ adeudo['id_transaccion'] }}</td>
-          <td>{{ adeudo['id_tipo'] }}</td>
-          <td>{{ adeudo['fecha'] }}</td>
-          <td>{{ adeudo['id_proveedor'] }}</td>
-          <td>{{ adeudo['monto'] }}</td>
-          <td>{{ adeudo['descripcion'] }}</td>
-          <td>{{ adeudo['estatus'] }}</td>
+        <tr v-for="(aceite, index) in resultados" :key="index">
+          <td>{{ aceite['id_producto'] }}</td>
+          <td>{{ aceite['id_turno'] }}</td>
+          <td>{{ aceite['nombre'] }}</td>
+          <td>{{ aceite['cantidad'] }}</td>
+          <td>${{ aceite['precio'] }}</td>
+          <td>{{ aceite['total'] }}</td>
         </tr>
       </tbody>
     </table>
-    <!-- Nueva tabla con las sumas totales -->
-    <table class="tabla-totales">
-      <thead>
-        <tr>
-          <th>Total Cargo</th>
-          <th>Total Abono</th>
-          <th>Total Saldo</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>{{ totalCargo.toFixed(2) }}</td>
-          <td>{{ totalAbono.toFixed(2) }}</td>
-          <td>{{ totalSaldo.toFixed(2) }}</td>
-        </tr>
-      </tbody>
-    </table>
+    <br>
+    <table class="tabla-totales" v-if="totales !== null">
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>Cantidad</th>
+        <th>Precio</th>
+        <th>Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Utiliza los resultados filtrados para mostrar la información en la tabla -->
+      <tr v-for="(aceite, index) in resultados" :key="index">
+        <td>{{ aceite['nombre'] }}</td>
+        <td>{{ aceite['cantidad'] }}</td>
+        <td>${{ aceite['precio'] }}</td>
+        <td>{{ aceite['total'] }}</td>
+      </tr>
+      <!-- Añade una nueva fila al final para mostrar la suma total de la columna 'total' -->
+      <tr>
+        <td><strong>Total</strong></td>
+        <td style="color: white;">{{ totales.cantidad.toFixed(2) }}</td>
+        <td style="color: white;">${{ totales.precio.toFixed(2) }}</td>
+        <td><strong>${{ totales.total.toFixed(2) }}</strong></td>
+      </tr>
+    </tbody>
+  </table>
+    
+
   </div>
 </template>
 
 <script>
 import axios from "axios";
+//import { Chart } from 'chart.js';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
@@ -74,47 +83,45 @@ export default {
   data() {
     return {
       resultados: [],
-      datosOriginales: [],
-      fechaInicio: "",
-      fechaFin: "",
-      idTipo: "",
-      estatus: "",
+      idTurno: null,
+      totales: { cantidad: 0, precio: 0, total: 0 },
     };
   },
-  computed: {
-    totalCargo() {
-      return this.resultados.reduce((total, adeudo) => total + Number(adeudo.cargo), 0);
-    },
-    totalAbono() {
-      return this.resultados.reduce((total, adeudo) => total + Number(adeudo.abono), 0);
-    },
-    totalSaldo() {
-      return this.resultados.reduce((total, resu) => total + Number(resu.cargo) - Number(resu.abono), 0);
-    }
-  },
   mounted() {
-    axios
-      .get("https://sistemas-oktan.com/admin/get.php/transaccionesproveedores")
-      .then((response) => {
-        this.resultados = response.data.data;
-        this.datosOriginales = response.data.data; // Almacena los datos originales
-        console.log(this.resultados);
-        this.generateChart();
-      })
-      .catch((error) => {
-        console.error("Error al obtener datos de la API:", error);
-      });
+    this.fetchData(); // Llama a fetchData cuando el componente se monta
   },
   methods: {
+    fetchData() {
+      axios
+        .get("https://sistemas-oktan.com/admin/get.php/invaceites")
+        .then((response) => {
+          this.resultados = response.data.data;
+          console.log(this.resultados);
+          this.calcularTotales(); 
+        })
+        .catch((error) => {
+          console.error("Error al obtener datos de la API:", error);
+        });
+    },
     filtrarDatos() {
-      // Filtrar datos en base a los criterios ingresados
-      this.resultados = this.datosOriginales.filter(adeudo => {
-        return (
-          (this.fechaInicio === "" || adeudo.fecha >= this.fechaInicio) &&
-          (this.fechaFin === "" || adeudo.fecha <= this.fechaFin) &&
-          (this.idTipo === "" || adeudo.id_tipo == this.idTipo) &&
-          (this.estatus === "" || adeudo.estatus == this.estatus)
+      if (this.idTurno) {
+        this.resultados = this.resultados.filter(
+          (resultado) => resultado.id_turno === this.idTurno
         );
+        this.calcularTotales();
+      } else {
+        this.fetchData(); // Si idTurno está vacío, vuelve a buscar todos los datos
+      }
+    },
+    calcularTotales() {
+
+      this.totales = { cantidad: 0, precio: 0, total: 0 };
+
+      // Calcula los totales 
+      this.resultados.forEach((aceite) => {
+        this.totales.cantidad += parseFloat(aceite.cantidad);
+        this.totales.precio += parseFloat(aceite.precio);
+        this.totales.total += parseFloat(aceite.total);
       });
     },
     downloadPDF() {
@@ -144,12 +151,10 @@ export default {
           console.error('Error al capturar la representación gráfica de la tabla:', error);
         });
     },
-    generateChart() {
-      // Lógica para generar el gráfico
-    },
   },
 };
 </script>
+
 
 
 <style scoped>
@@ -165,16 +170,18 @@ table {
   margin-top: 20px; /* Ajusta según sea necesario */
 }
 .tabla-totales {
-  width: 50%; /* Cambia esto al ancho que desees */
+  width: 700px; /* Cambia esto al ancho que desees */
   height: auto; /* Cambia esto a la altura que desees */
   margin-left: auto;
   margin-right: 0;
   
+  
 }
+
 
 td:first-child {
   /* Establece el ancho de la primera columna */
-  width: 300px;  /* Ajusta este valor según tus necesidades */
+  width: 200px;  /* Ajusta este valor según tus necesidades */
 }
 
 
@@ -237,3 +244,6 @@ th {
   font-size: 18px;
 }
 </style>
+
+
+

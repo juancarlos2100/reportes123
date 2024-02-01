@@ -15,6 +15,7 @@
       <button class="boton-filtrar" type="submit">Filtrar</button>
     </form>
     <button class="boton-descargar" @click="downloadPDF">Descargar PDF</button>
+    <button class="boton-descargar" @click="downloadPDF">Descargar XLS</button>
     <table>
       <thead>
         <tr>
@@ -34,7 +35,7 @@
           <!--<td>{{ adeudo['id_cuenta'] }}</td>-->
           <td>{{ adeudo['fecha_contable'] }}</td>
            <!--<td>{{ adeudo['monto'] }}</td>-->
-          <td>${{ adeudo['saldo'] }}</td>
+           <td>${{ parseFloat(adeudo['saldo']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
           <!--<td>{{ adeudo['descripcion'] }}</td>-->
           <td>{{ adeudo['estado'] }}</td>
           <td>{{ adeudo['banco'] }}</td>
