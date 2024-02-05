@@ -22,19 +22,19 @@
     <table class="tabla-totales">
         <thead>
           <tr>
-            <th>Fecha</th>
             <th>Saldo</th>
-            <!--<th>Status</th>-->
             <th>Banco</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(adeudo, index) in resultadosBancos" :key="index">
-            <td>{{ adeudo['fecha_contable'] }}</td>
-            <td>${{ parseFloat(adeudo['saldo']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
-            <!--<td>{{ adeudo['estado'] }}</td>-->
-            <td>{{ adeudo['banco'] }}</td>
-          </tr>
+          <tr v-for="(saldo, banco) in calcularUltimoSaldoPorBanco()" :key="banco">
+          <td>{{ banco }}</td>
+          <td>${{ parseFloat(saldo).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
+        </tr>
+        <tr>
+          <td><strong>Total</strong></td>
+          <td><strong>${{ calcularTotalSaldoUltimoPorBanco().toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
+    </tr>
         </tbody>
       </table>
 
@@ -51,7 +51,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="(adeudo, index) in resultadosProveedores" :key="index">
+        <tr v-for="(adeudo, index) in resultadosFiltradosProveedores" :key="index">
           <td>{{ adeudo['fecha_creacion'] }}</td>
           <td>{{ adeudo['nombre'] }}</td>
           <td>{{ adeudo['folio'] }}</td>
@@ -74,7 +74,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="(adeudo, index) in resultadosEfectivo" :key="index">
+        <tr v-for="(adeudo, index) in resultadosFiltradosEfectivo" :key="index">
           <td>{{ adeudo['fecha'] }}</td>
           <td>{{ parseFloat(adeudo['monto']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
           <td>${{ parseFloat(adeudo['monto_depositado']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
@@ -97,7 +97,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="(adeudo, index) in resultadosClientes" :key="index">
+        <tr v-for="(adeudo, index) in resultadosFiltradosClientes" :key="index">
           <td>{{ adeudo['fecha'] }}</td>
           <!--<td>{{ adeudo['id_entidad'] }}</td>-->
           <td>${{ parseFloat(adeudo['saldo']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
@@ -118,7 +118,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="(adeudo, index) in resultadosSegundaTabla" :key="index">
+        <tr v-for="(adeudo, index) in resultadosFiltradosReembolso" :key="index">
           <td>{{ adeudo['fecha_creacion'] }}</td>
           <!--<td>{{ adeudo['id_entidad'] }}</td>-->
           <td>${{ parseFloat(adeudo['saldo']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
@@ -157,25 +157,27 @@
 
 <script>
 import axios from "axios";
-//import { Chart } from 'chart.js';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 
 export default {
   data() {
     return {
-      totalesPorBanco: {},
-      totalesPorNombre: {},
-      resultadosFiltrados: [],
-      totalImporte: 0,
+      fechaInicio: '', // Variable para almacenar la fecha de inicio del formulario
+      fechaFin: '', // Variable para almacenar la fecha de fin del formulario
+
       resultadosBancos: [],
-      resultadosClientes: [],
-      resultadosEfectivo: [],
-      resultadosGasolina: [],
       resultadosProveedores: [],
-      resultadosSegundaTabla: [],
-      totalSaldoResultados: 0,
-      totalSaldoResultadosSegundaTabla: 0,
+      resultadosEfectivo: [],
+      resultadosClientes: [],
+      resultadosReembolso: [],
+      resultadosGasolina: [],
+
+      resultadosFiltradosBancos: [],
+      resultadosFiltradosProveedores: [],
+      resultadosFiltradosEfectivo: [],
+      resultadosFiltradosClientes: [],
+      resultadosFiltradosReembolso: [],
+      
+
     };
   },
   mounted() {
@@ -222,8 +224,7 @@ export default {
       axios
           .get("https://sistemas-oktan.com/admin/get.php/empreembolso")
           .then((response) => {
-            this.resultadosSegundaTabla = response.data.data; // Asegúrate de tener 'resultadosSegundaTabla' en tu data()
-            this.calcularTotales();
+            this.resultadosReembolso = response.data.data; // Asegúrate de tener 'resultadosSegundaTabla' en tu data()
           })
           .catch((error) => {
             console.error("Error al obtener datos de la segunda API:", error);
@@ -239,68 +240,57 @@ export default {
         });
   },
   methods: {
-    filtrarDatos() {
-      this.resultadosFiltrados = this.resultados; // Usa la propiedad de datos en lugar de una variable local
-
-      if (this.fechaInicio && this.fechaFin) {
-        this.resultadosFiltrados = this.resultadosFiltrados.filter(adeudo => {
-          const fechaContable = new Date(adeudo['fecha']); // Cambiado 'fecha_contable' por 'fecha'
-          const fechaInicio = new Date(this.fechaInicio);
-          const fechaFin = new Date(this.fechaFin);
-          return fechaContable >= fechaInicio && fechaContable <= fechaFin;
+      filtrarDatos() {
+        // Filtrar resultadosBancos por las fechas seleccionadas en el formulario
+        this.resultadosFiltradosBancos = this.resultadosBancos.filter((adeudo) => {
+          const fecha = new Date(adeudo.fecha_contable);
+          return fecha >= new Date(this.fechaInicio) && fecha <= new Date(this.fechaFin);
         });
-      }
 
-      // Calcula el total de los importes filtrados
-      this.totalImporte = this.resultadosFiltrados.reduce((total, adeudo) => total + parseFloat(adeudo['diferencia']), 0);
-    },
-    calcularTotales() {
-      this.totalSaldoResultados = this.calcularTotalImporte(this.resultadosClientes);
-      this.totalSaldoResultadosSegundaTabla = this.calcularTotalImporte(this.resultadosSegundaTabla);
-    },
-    calcularTotalImporte(resultados) {
-      return resultados.reduce((total, adeudo) => total + parseFloat(adeudo['saldo']), 0);
-    },
-      downloadPDF() {
-        const pdfOptions = {
-        orientation: "portrait",
-        unit: "mm",
-        format: "letter",
-      };
-
-      const doc = new jsPDF(pdfOptions);
-
-      html2canvas(this.$el, { scale: 3 })
-        .then(canvas => {
-          let imgData = canvas.toDataURL('image/jpeg', 0.1);
-
-          let imgWidth = 200;
-          let pageHeight = 295;  // A4 height
-          let imgHeight = (canvas.height * imgWidth) / canvas.width;
-          let heightLeft = imgHeight;
-
-          let marginLeft = (doc.internal.pageSize.getWidth() - imgWidth) / 2;
-          let marginTop = 10;
-
-          doc.addImage(imgData, 'JPEG', marginLeft, marginTop, imgWidth, imgHeight);
-          heightLeft -= pageHeight;
-
-          while (heightLeft >= 0) {
-            marginTop = heightLeft - imgHeight;
-            doc.addPage();
-            doc.addImage(imgData, 'JPEG', marginLeft, marginTop, imgWidth, imgHeight);
-            heightLeft -= pageHeight;
-          }
-
-          doc.save('informe_financiero.pdf');
-        })
-        .catch(error => {
-          console.error('Error al capturar la representación gráfica de la tabla:', error);
+        // Filtrar resultadosProveedores por las fechas seleccionadas en el formulario
+        this.resultadosFiltradosProveedores = this.resultadosProveedores.filter((adeudo) => {
+          const fecha = new Date(adeudo.fecha_creacion);
+          return fecha >= new Date(this.fechaInicio) && fecha <= new Date(this.fechaFin);
         });
-    }
+
+        // Filtrar resultadosEfectivo por las fechas seleccionadas en el formulario
+        this.resultadosFiltradosEfectivo = this.resultadosEfectivo.filter((adeudo) => {
+          const fecha = new Date(adeudo.fecha);
+          return fecha >= new Date(this.fechaInicio) && fecha <= new Date(this.fechaFin);
+        });
+
+        // Filtrar resultadosClientes por las fechas seleccionadas en el formulario
+        this.resultadosFiltradosClientes = this.resultadosClientes.filter((adeudo) => {
+          const fecha = new Date(adeudo.fecha);
+          return fecha >= new Date(this.fechaInicio) && fecha <= new Date(this.fechaFin);
+        });
+
+        // Filtrar resultadosReembolso por las fechas seleccionadas en el formulario
+        this.resultadosFiltradosReembolso = this.resultadosReembolso.filter((adeudo) => {
+          const fecha = new Date(adeudo.fecha_creacion);
+          return fecha >= new Date(this.fechaInicio) && fecha <= new Date(this.fechaFin);
+        });
+
+      },
+
+      calcularUltimoSaldoPorBanco() {
+        return this.resultadosFiltradosBancos.reduce((totales, adeudo) => {
+          totales[adeudo['banco']] = adeudo['saldo'];
+          return totales;
+        }, {});
+      },
+      calcularTotalSaldoUltimoPorBanco() {
+        const saldos = this.calcularUltimoSaldoPorBanco();
+        return Object.values(saldos).reduce((total, saldo) => total + parseFloat(saldo), 0);
+      },
 
 
+      
+    // ... (otros métodos existentes) ...
   }
+ 
+
+  
 };
 </script>
 
@@ -389,4 +379,6 @@ td:first-child {
   font-size: 18px;
 }
 </style>
+
+
 
