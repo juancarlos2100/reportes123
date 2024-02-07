@@ -53,7 +53,7 @@
     </thead>
     <tbody>
       <!-- Utiliza los resultados filtrados para mostrar la información en la tabla -->
-      <tr v-for="(aceite, index) in resultados" :key="index">
+      <tr v-for="(aceite, index) in resultadosFiltrados" :key="index">
         <td>{{ aceite['nombre'] }}</td>
         <td>{{ aceite['cantidad'] }}</td>
         <td>${{ aceite['precio'] }}</td>
@@ -82,7 +82,7 @@ import html2canvas from 'html2canvas';
 export default {
   data() {
     return {
-      resultados: [],
+      resultadosFiltrados: [],
       idTurno: null,
       totales: { cantidad: 0, precio: 0, total: 0 },
     };
@@ -105,7 +105,7 @@ export default {
     },
     filtrarDatos() {
       if (this.idTurno) {
-        this.resultados = this.resultados.filter(
+        this.resultadosFiltrados = this.resultados.filter(
           (resultado) => resultado.id_turno === this.idTurno
         );
         this.calcularTotales();
@@ -118,7 +118,7 @@ export default {
       this.totales = { cantidad: 0, precio: 0, total: 0 };
 
       // Calcula los totales 
-      this.resultados.forEach((aceite) => {
+      this.resultadosFiltrados.forEach((aceite) => {
         this.totales.cantidad += parseFloat(aceite.cantidad);
         this.totales.precio += parseFloat(aceite.precio);
         this.totales.total += parseFloat(aceite.total);

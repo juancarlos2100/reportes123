@@ -54,7 +54,7 @@
   <tbody>
     <tr v-for="(total, nombre) in totalesPorNombre" :key="nombre">
       <td>{{ total.factura.toFixed(2) }}</td> <!-- Valor de la factura -->
-      <td>{{ total.saldo.toFixed(2) }}</td>
+      <td>${{ parseFloat(total.saldo).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
       <td>{{ nombre }}</td>
     </tr>
   </tbody>

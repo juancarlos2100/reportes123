@@ -20,32 +20,28 @@
     <button class="boton-descargar" @click="downloadPDF">Descargar XLS</button>
 
     <table>
-      <thead>
-        <tr>
-          <th>id_entidad</th>
-          <th>fecha</th>
-          <th>saldo</th>
-          <th>razon_social</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="(adeudo, index) in resultados" :key="index">
-          <!--<td>{{ adeudo['id_turno'] }}</td>-->
-          <td>{{ adeudo['id_entidad'] }}</td>
-          <td>{{ adeudo['fecha'] }}</td>
-          <td>${{ parseFloat(adeudo['saldo']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
-          <!--<td>{{ adeudo['forma_pago'] }}</td>-->
-          <td>{{ adeudo['razon_social'] }}</td>
-        </tr>
-      </tbody>
-    </table>
-    <tfoot>
-      <tr>
-        <td colspan="2"><strong>Total</strong></td>
-        <td>${{ totalSaldoResultados.toFixed(2) }}</td>
-        <td></td>
-      </tr>
-    </tfoot>
+  <thead>
+    <tr>
+     
+      <th>fecha</th>
+      <th>razon_social</th>
+      <th>saldo</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr v-for="(adeudo, index) in resultadosFiltrados" :key="index">
+      
+      <td>{{ adeudo['fecha'] }}</td>
+      <td>{{ adeudo['razon_social'] }}</td>
+      <td>${{ parseFloat(adeudo['saldo']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
+    </tr>
+    <tr>
+      <td colspan="2"><strong>Total</strong></td>
+      <td><strong>${{ calcularTotalSaldos() }}</strong></td>
+    </tr>
+  </tbody>
+</table>
+
     <br>
     <h2>Empresas de reembolso</h2>
     <br>
@@ -54,16 +50,16 @@
       <thead>
         <tr>
           <th>id_entidad</th>
-          <th>fecha</th>
           <th>saldo</th>
+          <th>fecha</th>
           <th>nombre</th>
         </tr>
       </thead>
       <tbody>
         <tr v-for="(adeudo, index) in resultadosSegundaTabla" :key="index">
           <td>{{ adeudo['id_entidad'] }}</td>
-          <td>{{ adeudo['fecha_creacion'] }}</td>
           <td>${{ parseFloat(adeudo['saldo']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
+          <td>{{ adeudo['fecha_creacion'] }}</td>
           <td>{{ adeudo['nombre'] }}</td>
          
           
@@ -130,24 +126,33 @@ export default {
   },
   methods: {
     filtrarDatos() {
-    // Convertir las fechas a objetos Date para poder compararlas
-    let fechaInicio = new Date(this.fechaInicio);
-    let fechaFin = new Date(this.fechaFin);
+  this.resultadosFiltrados = this.resultados; // Usamos la propiedad de datos en lugar de una variable local
 
-    // Filtrar los resultados basándose en las fechas
-    this.resultadosFiltrados = this.resultados.filter(adeudo => {
-      let fechaAdeudo = new Date(adeudo['fecha']);
-      return fechaAdeudo >= fechaInicio && fechaAdeudo <= fechaFin;
+  if (this.idTurno) {
+    // Filtrar por id_turno
+    this.resultadosFiltrados = this.resultadosFiltrados.filter(adeudo => adeudo['id_turno'] === this.idTurno);
+  } else if (this.fechaInicio && this.fechaFin) {
+    // Filtrar por fecha
+    this.resultadosFiltrados = this.resultadosFiltrados.filter(adeudo => {
+      const fechaContable = new Date(adeudo['fecha']); // Cambiado 'fecha_contable' por 'fecha'
+      const fechaInicio = new Date(this.fechaInicio);
+      const fechaFin = new Date(this.fechaFin);
+      return fechaContable >= fechaInicio && fechaContable <= fechaFin;
     });
+  }
 
-    // Calcular el total de los saldos de los resultados filtrados
-    this.totalSaldoResultados = this.resultadosFiltrados.reduce((total, adeudo) => total + Number(adeudo['saldo']), 0);
-  },
+  // Calcula el total de los importes filtrados
+  this.totalImporteFiltrado = this.resultadosFiltrados.reduce((total, adeudo) => total + parseFloat(adeudo['saldo']), 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+},
 
 
   calcularTotales() {
     this.totalSaldoResultados = this.resultados.reduce((total, adeudo) => total + Number(adeudo['saldo']), 0);
     this.totalSaldoResultadosSegundaTabla = this.resultadosSegundaTabla.reduce((total, adeudo) => total + Number(adeudo['saldo']), 0);
+  },
+  calcularTotalSaldos() {
+    // Suma todos los saldos de la columna 'saldo' en los datos filtrados
+    return this.resultadosFiltrados.reduce((total, adeudo) => total + parseFloat(adeudo['saldo']), 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
   },
   downloadPDF() {
       const pdfOptions = {

@@ -5,7 +5,9 @@
     </header>
     <h1>Reporte Operativo</h1>
     <h2>Efectivo por depositar</h2>
-    <form @submit.prevent="filtrarDatos">
+    <form @submit.prevent="filtrarDatos"> <label for="idTurno" style="font-size: 20px; font-weight: bold; padding-right: 10px;">ID Turno:</label>
+      <input type="text" v-model="idTurno" style="margin-right:10px;">
+
       <label for="fechaInicio" style="font-size: 20px; font-weight: bold; padding-right: 10px;" >Fecha de Inicio:</label>
       <input type="date" v-model="fechaInicio" style="margin-right:10px;">
       
@@ -22,7 +24,7 @@
         <tr>
            <!--<th>ID Proveedor</th>-->
           <!--<th>Estatus</th>-->
-          <!--<th>id_turno</th>-->
+          <th>id_turno</th>
           <th>Fecha</th>
           <th>monto</th>
           <th>monto depositado</th>
@@ -32,7 +34,7 @@
       </thead>
       <tbody>
         <tr v-for="(adeudo, index) in resultados" :key="index">
-          <!--<td>{{ adeudo['id_turno'] }}</td>-->
+          <td>{{ adeudo['id_turno'] }}</td>
           <td>{{ adeudo['fecha'] }}</td>
           <td>{{ parseFloat(adeudo['monto']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
           <td>${{ parseFloat(adeudo['monto_depositado']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
@@ -105,7 +107,11 @@ export default {
     filtrarDatos() {
       this.resultadosFiltrados = this.resultados; // Usa la propiedad de datos en lugar de una variable local
 
-      if (this.fechaInicio && this.fechaFin) {
+      if (this.idTurno) {
+        // Filtrar por id_turno
+        this.resultadosFiltrados = this.resultadosFiltrados.filter(adeudo => adeudo['id_turno'] === this.idTurno);
+      } else if (this.fechaInicio && this.fechaFin) {
+        // Filtrar por fecha
         this.resultadosFiltrados = this.resultadosFiltrados.filter(adeudo => {
           const fechaContable = new Date(adeudo['fecha']); // Cambiado 'fecha_contable' por 'fecha'
           const fechaInicio = new Date(this.fechaInicio);

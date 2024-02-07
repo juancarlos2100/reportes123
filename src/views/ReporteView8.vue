@@ -21,25 +21,21 @@
         <thead>
           <tr>
             <th>id_turno</th>
-            <th>id_tanque</th>
             <th>nombre</th>
-            <th>fin_volumen</th>
             <th>precio</th>
-            <th>desc_precio</th>
-            <th>ieps</th>
             <th>venta bruta</th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="(adeudo, index) in resultados" :key="index">
             <td>{{ adeudo['id_turno'] }}</td>
-            <td>{{ adeudo['id_tanque'] }}</td>
+            
             <td>{{ adeudo['nombre'] }}</td>
-            <td>{{ adeudo['fin_volumen'] }}</td>
+           
             <td>{{ adeudo['precio'] }}</td>
-            <td>{{ adeudo['dec_precio'] }}</td>
-            <td>{{ adeudo['ieps'] }}</td>
-            <td>{{ adeudo['total'] }}</td>
+          
+           
+            <td>${{ parseFloat(adeudo['total']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>>
           </tr>
         </tbody>
       </table>
