@@ -47,18 +47,18 @@
       <thead>
         <tr>
           <th>nombre</th>
-          <th>precio_venta</th>
-          <th>precio_compra</th>
-          <th>utilidad</th>
+          <th>Litros</th>
+          <th>Precio</th>
+          <th>Importe</th>
         </tr>
         
       </thead>
       <tbody>
         <tr v-for="(adeudo, index) in resultados" :key="index">
           <td>{{ adeudo['nombre'] }}</td>
-          <td>{{ adeudo['precio_venta'] }}</td>
-          <td>${{ adeudo['precio_compra'] }}</td>
-          <td>${{ parseFloat(adeudo['utilidad']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
+          <td>{{ parseFloat(adeudo['fin_volumen']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
+          <td>{{ adeudo['precio_compra'] }}</td>
+          <td>${{ parseFloat(adeudo['total_compra']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
         </tr>
       </tbody>
     </table>

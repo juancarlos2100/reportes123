@@ -4,9 +4,14 @@
     <header>
       <img class="imagen-encabezado" src="@/assets/logok.png" alt="Descripción de la imagen">
     </header>
-    <h1>Reporte General</h1>
-    <h2> Desglose</h2>
+    <h1>Desglose</h1>
     <form @submit.prevent="filtrarDatos">
+      <label for="idTurno" style="font-size: 20px; font-weight: bold; padding-right: 10px;">ID Turno Inicial:</label>
+      <input type="text" v-model="idTurno" style="margin-right:10px;">
+      <label for="idTurno" style="font-size: 20px; font-weight: bold; padding-right: 10px;">ID Turno Final:</label>
+      <input type="text" v-model="idTurno" style="margin-right:10px;">
+      <br>
+
       <label for="fechaInicio" style="font-size: 20px; font-weight: bold; padding-right: 10px;" >Fecha de Inicio:</label>
       <input type="date" v-model="fechaInicio" style="margin-right:10px;">
       
@@ -73,17 +78,22 @@
       <table class="tabla-totales">
       <thead>
         <tr>
+          <th>ID Turno</th>
           <th>monto</th>
-          <th>monto depositado</th>
           <th>diferencia</th>
         </tr>
       </thead>
       <tbody>
         <tr v-for="(adeudo, index) in resultadosFiltradosEfectivo" :key="index">
-          <td>{{ parseFloat(adeudo['monto']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
+          <td>{{ adeudo['id_turno'] ? adeudo['id_turno'] : 'NULL' }}</td>
           <td>${{ parseFloat(adeudo['monto_depositado']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
           <td>${{ parseFloat(adeudo['diferencia']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
         </tr>
+        <tr>
+        <td><strong>Total</strong></td>
+          <td></td> <!-- Agrega una celda vacía para mantener la alineación -->
+          <td><strong>${{ calcularTotalDiferencia().toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
+         </tr>
       </tbody>
     </table>
     </div>
@@ -115,14 +125,14 @@
       <table class="tabla-totales">
       <thead>
         <tr>
-          <th>saldo</th>
           <th>nombre</th>
+          <th>saldo</th>
         </tr>
       </thead>
       <tbody>
         <tr v-for="(adeudo, index) in resultadosFiltradosReembolso" :key="index">
-          <td>${{ parseFloat(adeudo['saldo']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
           <td>{{ adeudo['nombre'] }}</td>
+          <td>${{ parseFloat(adeudo['saldo']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
          
           
         </tr>
@@ -135,23 +145,77 @@
       <table class="tabla-totales">
       <thead>
         <tr>
-          <th>nombre</th>
-          <th>precio_venta</th>
-          <th>precio_compra</th>
-          <th>utilidad</th>
+          <th>Combustible</th>
+          <th>Litros</th>
+          <th>Precio</th>
+          <th>Importe</th>
         </tr>
         
       </thead>
       <tbody>
         <tr v-for="(adeudo, index) in resultadosGasolina" :key="index">
           <td>{{ adeudo['nombre'] }}</td>
-          <td>{{ adeudo['precio_venta'] }}</td>
+          <td>{{ parseFloat(adeudo['fin_volumen']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
           <td>${{ adeudo['precio_compra'] }}</td>
-          <td>${{ parseFloat(adeudo['utilidad']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
+          <td><strong>${{ parseFloat(adeudo['total_compra']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
         </tr>
       </tbody>
     </table>
     </div>
+  </div>
+  <div>
+    <!--Inventario de Aceites-->
+    <h3>Inventario de Aceites</h3>
+    <table class="tabla-totales">
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>Cantidad</th>
+        <th>Precio</th>
+        <th>Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Utiliza los resultados filtrados para mostrar la información en la tabla -->
+      <tr v-for="(aceite, index) in resultadosFiltradosAceites" :key="index">
+        <td>{{ aceite['nombre'] }}</td>
+        <td>{{ aceite['cantidad'] }}</td>
+        <td>${{ parseFloat(aceite['precio']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
+        <td>${{ parseFloat(aceite['total']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
+      </tr>
+      <!-- Añade una nueva fila al final para mostrar la suma total de la columna 'total' -->
+      <tr>
+        <td><strong>Total</strong></td>
+        <td style="color: white;">{{ totales.cantidad.toFixed(2) }}</td>
+        <td style="color: white;">${{ totales.precio.toFixed(2) }}</td>
+        <td><strong>${{ parseFloat(totales.total).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div>
+    <!--Clientes debito-->
+    <h3>Clientes Debito</h3>
+    <table class="tabla-totales">
+        <thead>
+          <tr>
+            <th>Razon Social</th>
+            <th>Saldo</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(adeudo, index) in resultadosFiltradosClientes.slice(5, 10)" :key="index">
+            <td>{{ adeudo['razon_social'] }}</td>
+            <td>${{ parseFloat(adeudo['saldo']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
+          </tr>
+          <tr>
+            <td><strong>Total</strong></td>
+            <td><strong>${{ calcularTotalSaldosClientes().toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
+          </tr>
+        </tbody>
+      </table>
+
   </div>
 </template>
 
@@ -169,6 +233,7 @@ export default {
     return {
       fechaInicio: '', // Variable para almacenar la fecha de inicio del formulario
       fechaFin: '', // Variable para almacenar la fecha de fin del formulario
+      idTurno: null, // Variable para almacenar el idTurno del formulario
 
       resultadosBancos: [],
       resultadosProveedores: [],
@@ -183,7 +248,10 @@ export default {
       resultadosFiltradosEfectivo: [],
       resultadosFiltradosClientes: [],
       resultadosFiltradosReembolso: [],
+      resultadosFiltradosAceites: [],
       
+      
+      totales: { cantidad: 0, precio: 0, total: 0 },
 
     };
   },
@@ -209,7 +277,12 @@ export default {
     // Obtener datos de efectivo
     axios.get("https://sistemas-oktan.com/admin/get.php/depositoefectivo")
       .then((response) => {
-        this.resultadosEfectivo = response.data.data;
+        this.resultadosEfectivo = response.data.data.map(item => {
+          if (item.id_turno === '') {
+            item.id_turno = null;
+          }
+          return item;
+        });
       })
       .catch((error) => {
         console.error("Error al obtener datos de efectivo:", error);
@@ -245,6 +318,16 @@ export default {
         .catch((error) => {
           console.error("Error al obtener datos de bancos:", error);
         });
+      axios
+        .get("https://sistemas-oktan.com/admin/get.php/invaceites")
+        .then((response) => {
+          this.resultadosAceites = response.data.data;
+          console.log(this.resultados);
+          this.calcularTotales(); 
+        })
+        .catch((error) => {
+          console.error("Error al obtener datos de la API:", error);
+        });
   },
   methods: {
       filtrarDatos() {
@@ -277,6 +360,13 @@ export default {
           const fecha = new Date(adeudo.fecha_creacion);
           return fecha >= new Date(this.fechaInicio) && fecha <= new Date(this.fechaFin);
         });
+
+       // Filtrar resultadosAceites por idTurno seleccionadas en el formulario
+        this.resultadosFiltradosAceites = this.resultadosAceites.filter((aceite) => {
+          return aceite.id_turno === this.idTurno;
+        });
+        this.calcularTotales(); // Recalcular los totales después de filtrar los datos
+
 
       },
 
@@ -322,6 +412,22 @@ export default {
           return total + parseFloat(cliente['saldo']);
         }, 0);
       },
+      calcularTotalDiferencia() {
+        return this.resultadosFiltradosEfectivo.reduce((total, adeudo) => {
+        return total + parseFloat(adeudo['diferencia']);
+        }, 0);
+      },
+      calcularTotales() {
+        this.totales = { cantidad: 0, precio: 0, total: 0 };
+
+        // Calcula los totales 
+        this.resultadosFiltradosAceites.forEach((aceite) => {
+          this.totales.cantidad += parseFloat(aceite.cantidad);
+          this.totales.precio += parseFloat(aceite.precio);
+          this.totales.total += parseFloat(aceite.total);
+        });
+      },
+
       exportExcel() {
         this.$nextTick(async () => {
           const workbook = new ExcelJS.Workbook();
