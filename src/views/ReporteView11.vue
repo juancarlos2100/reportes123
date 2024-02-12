@@ -19,60 +19,56 @@
       <table>
         <thead>
           <tr>
-            <th>id_tanque</th>
             <th>Productos</th>
             <th>Lectura Inicial</th>
             <th>Compras</th>
+            <th>Suma</th>
             <th>Ventas</th>
-            <th> Lectura Final</th>
-            
-            <th>fin_volumen</th>
-            <th>precio_venta</th>
-            <th>precio_compra</th>
-            <th>total_compra</th>
-            <th>total_venta</th>
-            <th>utilidad</th>
-            <th> Merma</th>
+            <th>Lectura Final</th>
+            <th>Total</th>
+            <th>precio_promedio</th>
+            <th>Merma</th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="(adeudo, index) in resultados" :key="index">
-            <td>{{ adeudo['id_tanque'] }}</td>
             <td>{{ adeudo['nombre'] }}</td>
-            <td>{{ adeudo[''] }}</td>
-            <td>{{ adeudo[''] }}</td>
-            <td>{{ adeudo[''] }}</td>
-            <td>{{ adeudo[''] }}</td>
+            <td>{{ adeudo['inicio_volumen'] }}</td>
             <td>{{ adeudo['fin_volumen'] }}</td>
-            <td>{{ adeudo['precio_venta'] }}</td>
-            <td>${{ adeudo['precio_compra'] }}</td>
-            <td>${{ parseFloat(adeudo['total_compra']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
-            <td>${{ parseFloat(adeudo['total_venta']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
-            <td>${{ parseFloat(adeudo['utilidad']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
-            <td>{{ adeudo[''] }}</td>
+            <td>{{ adeudo['jarras_monto'] }}</td>
+            <td>${{ adeudo['ventas'] }}</td>
+            <td>{{ adeudo['jarras_volumen'] }}</td>
+            <td>${{ adeudo['importe'] }}</td>
+            <td>${{ adeudo['precio_promedio'] }}</td>
+            <td>${{ parseFloat(adeudo['']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
           </tr>
         </tbody>
       </table>
       <br>
       <table class="tabla-totales">
-        <thead>
-          <tr>
-            <th>nombre</th>
-            <th>Litros</th>
-            <th>Precio</th>
-            <th>Importe</th>
-          </tr>
-          
-        </thead>
-        <tbody>
-          <tr v-for="(adeudo, index) in resultados" :key="index">
-            <td>{{ adeudo['nombre'] }}</td>
-            <td>{{ parseFloat(adeudo['fin_volumen']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
-            <td>{{ adeudo['precio_compra'] }}</td>
-            <td>${{ parseFloat(adeudo['total_compra']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
-          </tr>
-        </tbody>
-      </table>
+      <thead>
+        <tr>
+          <th>nombre</th>
+          <th>fin_volumen</th>
+          <th>precio_venta</th>
+          <th>precio_compra</th>
+          <th>total_compra</th>
+          <th>total_venta</th>
+          <th>utilidad</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="(adeudo, index) in resultados2" :key="index">
+          <td>{{ adeudo['nombre'] }}</td>
+          <td>{{ adeudo['fin_volumen'] }}</td>
+          <td>{{ adeudo['precio_venta'] }}</td>
+          <td>${{ adeudo['precio_compra'] }}</td>
+          <td>${{ parseFloat(adeudo['total_compra']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
+          <td>${{ parseFloat(adeudo['total_venta']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
+          <td>${{ parseFloat(adeudo['utilidad']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
+        </tr>
+      </tbody>
+    </table>
       
       <!-- Nueva tabla con las sumas totales -->
   
@@ -90,6 +86,7 @@
     data() {
       return {
         resultados: [],
+        resultados2: [],
         idTipo: null,
         estatus: null,
         fechaInicio: null,
@@ -106,7 +103,7 @@
     },
     mounted() {
       axios
-        .get("https://sistemas-oktan.com/admin/get.php/invgasolina")
+        .get("https://sistemas-oktan.com/admin/get.php/repgasolina")
         .then((response) => {
           this.resultados = response.data.data;
           this.totalUtilidad = this.calcularTotalUtilidad; // Añade esta línea
@@ -117,6 +114,20 @@
         .catch((error) => {
           console.error("Error al obtener datos de la API:", error);
         });
+        axios
+        .get("https://sistemas-oktan.com/admin/get.php/invgasolina")
+        .then((response) => {
+          this.resultados2 = response.data.data;
+          this.totalUtilidad = this.calcularTotalUtilidad; // Añade esta línea
+          console.log(this.resultados);
+          this.calcularTotalesPorBanco();
+          this.generateChart();
+        })
+        .catch((error) => {
+          console.error("Error al obtener datos de la API:", error);
+        });
+
+      
     },
     
     methods: {
@@ -169,9 +180,9 @@
     margin-top: 20px; /* Ajusta según sea necesario */
   }
   .tabla-totales {
-    width: 700px; /* Cambia esto al ancho que desees */
+    width: 1500px; /* Cambia esto al ancho que desees */
     height: auto; /* Cambia esto a la altura que desees */
-    margin-left: auto;
+    margin-left: 300px;
     margin-right: 0;
     
     
@@ -243,3 +254,6 @@
     font-size: 18px;
   }
   </style>
+
+
+

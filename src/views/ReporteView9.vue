@@ -123,21 +123,24 @@
       <!-- Segunda Tabla -->
       <h3>Empresas de reembolso</h3>
       <table class="tabla-totales">
-      <thead>
-        <tr>
-          <th>nombre</th>
-          <th>saldo</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="(adeudo, index) in resultadosFiltradosReembolso" :key="index">
-          <td>{{ adeudo['nombre'] }}</td>
-          <td>${{ parseFloat(adeudo['saldo']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
-         
-          
-        </tr>
-      </tbody>
-    </table>
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Saldo</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(adeudo, index) in resultadosFiltradosReembolso" :key="index">
+            <td>{{ adeudo['nombre'] }}</td>
+            <td>${{ parseFloat(adeudo['saldo']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
+          </tr>
+          <!-- Nueva fila para mostrar el total -->
+          <tr>
+            <td><strong>Total</strong></td>
+            <td><strong>${{ calcularTotalSaldosReembolso().toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
+          </tr>
+        </tbody>
+      </table>
     </div>
      <!--Inventario de Gasolina-->
     <div>
@@ -426,6 +429,11 @@ export default {
           this.totales.precio += parseFloat(aceite.precio);
           this.totales.total += parseFloat(aceite.total);
         });
+      },
+      calcularTotalSaldosReembolso() {
+        return this.resultadosFiltradosReembolso.reduce((total, adeudo) => {
+        return total + parseFloat(adeudo['saldo']);
+        }, 0);
       },
 
       exportExcel() {
