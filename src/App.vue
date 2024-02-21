@@ -11,7 +11,7 @@
     <router-link to="/reporte7">Inv Aceites</router-link>|
     <router-link to="/reporte8">Reporte9</router-link>|
     <router-link to="/reporte9">DESGLOSE</router-link>|
-    <router-link to="/reporte10">Resumen General</router-link>|
+    <router-link to="/reporte10">Reporte Gastos</router-link>|
     <router-link to="/reporte11">General Gasolinas</router-link>|
   </nav>
   <router-view/>

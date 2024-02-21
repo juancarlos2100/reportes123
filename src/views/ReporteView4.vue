@@ -71,7 +71,8 @@
 
 <script>
 import axios from "axios";
-//import { Chart } from 'chart.js';
+//import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs'
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
@@ -153,6 +154,63 @@ export default {
           console.error('Error al capturar la representación gráfica de la tabla:', error);
         });
     },
+    exportExcel() {
+        this.$nextTick(async () => {
+          const workbook = new ExcelJS.Workbook();
+          const worksheet = workbook.addWorksheet('Sheet1');
+          const tables = this.$el.querySelectorAll('table');
+
+          let rowIndex = 1;
+
+          const headers = this.$el.querySelectorAll('h1');
+          headers.forEach(header => {
+            const titleCell = worksheet.getCell(rowIndex, 1);
+            titleCell.value = header.textContent.trim();
+            titleCell.font = { bold: true, size: 14 }; // Hacer el título negrita y un poco más grande
+            rowIndex++;
+          });
+
+          for (let i = 0; i < tables.length; i++) {
+            const table = tables[i];
+
+            // Convertir la tabla HTML a un array de arrays
+            const data = Array.from(table.querySelectorAll('tr')).map(tr =>
+              Array.from(tr.querySelectorAll('td, th')).map(td => td.innerText)
+            );
+
+            // Agregar los datos a la hoja de Excel
+            data.forEach((row, localRowIndex) => {
+              row.forEach((value, colIndex) => {
+                const cell = worksheet.getCell(rowIndex + localRowIndex, colIndex + 1);
+                cell.value = value;
+
+                // Aplicar negrita a los encabezados de cada columna
+                if (localRowIndex === 0) {
+                  cell.font = { bold: true };
+                }
+
+                // Ajustar el ancho de las columnas específicas
+                if (colIndex === 0) {
+                  worksheet.getColumn(colIndex + 1).width = 50; // Primera columna
+                } else if (colIndex === 1 || colIndex === 2 || colIndex === 3) {
+                  worksheet.getColumn(colIndex + 1).width = 20; // todas las demas columnas
+                }
+              });
+            });
+
+            rowIndex += data.length + 1; // Dejar una fila vacía entre las tablas
+          }
+
+          // Guardar el libro de trabajo como un archivo .xlsx
+          const buffer = await workbook.xlsx.writeBuffer();
+          const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'informe_financieroOKTAN.xlsx';
+          a.click();
+        });
+      },
 
 
 
