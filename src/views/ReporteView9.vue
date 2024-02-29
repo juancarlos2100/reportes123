@@ -6,9 +6,9 @@
     </header>
     <h1>Desglose</h1>
     <form @submit.prevent="filtrarDatos">
-      <label for="idTurno" style="font-size: 20px; font-weight: bold; padding-right: 10px;">ID Turno Inicial:</label>
+      <label for="idTurnoInicial" style="font-size: 20px; font-weight: bold; padding-right: 10px;">ID Turno Inicial:</label>
       <input type="text" v-model="idTurno" style="margin-right:10px;">
-      <label for="idTurno" style="font-size: 20px; font-weight: bold; padding-right: 10px;">ID Turno Final:</label>
+      <label for="idTurnoFinal" style="font-size: 20px; font-weight: bold; padding-right: 10px;">ID Turno Final:</label>
       <input type="text" v-model="idTurno" style="margin-right:10px;">
       <br>
 
