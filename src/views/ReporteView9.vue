@@ -260,7 +260,7 @@ export default {
   },
   mounted() {
     // Obtener datos de bancos
-    axios.get("https://sistemas-oktan.com/admin/get.php/transaccionesbanco")
+    axios.get("http://189.165.26.146:8081/admin/get.php/transaccionesbanco")
       .then((response) => {
         this.resultadosBancos = response.data.data;
       })

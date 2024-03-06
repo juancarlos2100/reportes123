@@ -6,14 +6,13 @@
     <h1>Reporte Operativo</h1>
     <h2>Transacciones Bancos</h2>
     <form @submit.prevent="filtrarDatos">
-      <label for="fechaInicio" style="font-size: 24px; font-weight: bold; padding-right: 10px; font-family: Arial, sans-serif;">Fecha de Inicio:</label>
-      <input type="date" v-model="fechaInicio" maxlength="4" style="margin-right:10px; width: 150px;height: 30px;">
+    <label for="fechaInicio" style="font-size: 24px; font-weight: bold; padding-right: 10px; font-family: Arial, sans-serif;">Fecha de Inicio:</label>
+    <input type="date" v-model="fechaInicio" maxlength="10" style="margin-right:10px; width: 150px;height: 30px;">
 
-      <label for="fechaFin" style="font-size: 24px; font-weight: bold; padding-right: 10px; font-family: Arial, sans-serif;">Fecha de Fin:</label>
-      <input type="date" v-model="fechaFin" maxlength="4" style="margin-right:10px; width: 150px; height: 30px;">
+    <label for="fechaFin" style="font-size: 24px; font-weight: bold; padding-right: 10px; font-family: Arial, sans-serif;">Fecha de Fin:</label>
+    <input type="date" v-model="fechaFin" maxlength="10" style="margin-right:10px; width: 150px; height: 30px;">
 
-
-      <button class="boton-filtrar" type="submit">Filtrar</button>
+    <button class="boton-filtrar" type="submit">Filtrar</button>
     </form>
     <button class="boton-descargar" @click="downloadPDF">Descargar PDF</button>
     <button class="boton-descargar" @click="exportExcel">Descargar XLS</button>
@@ -44,7 +43,13 @@
         </tr>
       </tbody>
     </table>
+    <br>
+    <div class="content-container">
+    <div class="chart-container">
+        <canvas id="myChart"></canvas>
+      </div>
     <!-- Nueva tabla con las sumas totales -->
+    <div class="table-container">
     <table class="tabla-totales">
       <thead>
         <tr>
@@ -60,21 +65,28 @@
       </tbody>
     </table>
   </div>
+</div>
+  </div>
 </template>
 
 <script>
 import axios from "axios";
+import ExcelJS from 'exceljs';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
+import Chart from 'chart.js/auto';
 
 export default {
   data() {
     return {
       resultados: [],
-      resultadosOriginales: [], // Nueva propiedad para almacenar los datos originales
+      resultadosOriginales: [],
       idTipo: null,
       estatus: null,
       fechaInicio: null,
       fechaFin: null,
       totalesPorBanco: {},
+      myChart: null,
     };
   },
   computed: {
@@ -88,40 +100,144 @@ export default {
       return this.resultados.reduce((total, resu) => total + Number(resu.cargo) - Number(resu.abono), 0);
     }
   },
-  mounted() {
-    axios
-      .get("http://189.165.26.146:8081/admin/get.php/transaccionesbanco")
-      .then((response) => {
-        this.resultadosOriginales = response.data.data; // Almacena los datos originales
-        this.resultados = [...this.resultadosOriginales]; // Copia los datos originales a resultados
-        this.calcularTotalesPorBanco();
-        this.generateChart();
-      })
-      .catch((error) => {
-        console.error("Error al obtener datos de la API:", error);
-      });
-  },
   methods: {
     filtrarDatos() {
-      let resultadosFiltrados = [...this.resultadosOriginales]; // Comienza con los datos originales
-
       if (this.fechaInicio && this.fechaFin) {
-        resultadosFiltrados = resultadosFiltrados.filter(adeudo => {
-          const fechaContable = new Date(adeudo['fecha_contable']);
-          const fechaInicio = new Date(this.fechaInicio);
-          const fechaFin = new Date(this.fechaFin);
-          return fechaContable >= fechaInicio && fechaContable <= fechaFin;
-        });
-      }
+        const url = "http://189.165.26.146:8081/admin/get.php/transaccionesbanco";
+        const params = {
+          fechaInicio: this.fechaInicio,
+          fechaFin: this.fechaFin,
+        };
 
-      this.resultados = resultadosFiltrados;
-      this.calcularUltimoSaldoPorBanco();
+        axios
+          .get(url, { params })
+          .then((response) => {
+            this.resultadosOriginales = response.data.data;
+            this.resultados = [...this.resultadosOriginales];
+            this.calcularUltimoSaldoPorBanco();
+          })
+          .catch((error) => {
+            console.error("Error al obtener datos de la API:", error);
+          });
+      } else {
+        this.resultados = [];
+        this.totalesPorBanco = {};
+      }
     },
     calcularUltimoSaldoPorBanco() {
       this.totalesPorBanco = this.resultados.reduce((totales, adeudo) => {
-        totales[adeudo['banco']] = adeudo['saldo'];
+        if (adeudo['banco'] && adeudo['saldo']) {
+          totales[adeudo['banco']] = adeudo['saldo'];
+        }
         return totales;
       }, {});
+      this.updateChart();
+    },
+    updateChart() {
+      if (this.myChart) {
+        this.myChart.destroy();
+      }
+      this.generateChart();
+    },
+    generateChart() {
+      var bancos = Object.keys(this.totalesPorBanco);
+      var saldos = Object.values(this.totalesPorBanco);
+      var ctx = document.getElementById('myChart').getContext('2d');
+      
+      this.myChart = new Chart(ctx, {
+          type: 'bar',
+          data: {
+              labels: bancos,
+              datasets: [{
+                  label: `Saldo por Banco del ${this.fechaInicio} al ${this.fechaFin}`,
+                  data: saldos,
+                  backgroundColor: 'rgba(96, 150, 96, 0.2)',
+                  borderColor: 'rgba(96, 150, 96, 1)',
+                  borderWidth: 1
+              }]
+          },
+          options: {
+              scales: {
+                  y: {
+                      beginAtZero: true
+                  }
+              }
+          }
+      });
+    },
+    downloadPDF() {
+      const pdfOptions = {
+        orientation: "portrait",
+        unit: "mm",
+        format: "letter",
+      };
+
+      const doc = new jsPDF(pdfOptions);
+
+      html2canvas(this.$el, { scale: 3 })
+        .then(canvas => {
+          let imgData = canvas.toDataURL('image/jpeg', 0.1);
+
+          let imgWidth = 200;
+          let imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+          let marginLeft = (doc.internal.pageSize.getWidth() - imgWidth) / 2;
+          let marginTop = 10;
+
+          doc.addImage(imgData, 'JPEG', marginLeft, marginTop, imgWidth, imgHeight);
+
+          doc.save('informe_financiero_SaldosBancos.pdf');
+        })
+        .catch(error => {
+          console.error('Error al capturar la representación gráfica de la tabla:', error);
+        });
+    },
+    async exportExcel() {
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Sheet1');
+      const tables = this.$el.querySelectorAll('table');
+
+      let rowIndex = 1;
+
+      for (let i = 0; i < tables.length; i++) {
+        const table = tables[i];
+
+        // Convertir la tabla HTML a un array de arrays
+        const data = Array.from(table.querySelectorAll('tr')).map(tr =>
+          Array.from(tr.querySelectorAll('td, th')).map(td => td.innerText)
+        );
+
+        // Agregar los datos a la hoja de Excel
+        data.forEach((row, localRowIndex) => {
+          row.forEach((value, colIndex) => {
+            const cell = worksheet.getCell(rowIndex + localRowIndex, colIndex + 1);
+            cell.value = value;
+
+            // Aplicar negrita a los encabezados de cada columna
+            if (localRowIndex === 0) {
+              cell.font = { bold: true };
+            }
+
+            // Ajustar el ancho de las columnas específicas
+            if (colIndex === 0) {
+              worksheet.getColumn(colIndex + 1).width = 50; // Primera columna
+            } else if (colIndex === 1 || colIndex === 2 || colIndex === 3) {
+              worksheet.getColumn(colIndex + 1).width = 20; // todas las demas columnas
+            }
+          });
+        });
+
+        rowIndex += data.length + 1; // Dejar una fila vacía entre las tablas
+      }
+
+      // Guardar el libro de trabajo como un archivo .xlsx
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'informeFinacieroSaldosBancos.xlsx';
+      a.click();
     },
   }
 };
@@ -131,11 +247,21 @@ export default {
 
 
 
+
 <style scoped>
-#chartContainer {
+.content-container {
   display: flex;
-  justify-content: center;
-  align-items: left;
+  justify-content: space-between;
+}
+
+.chart-container {
+  width: 50%;
+  height: 500px;
+  margin-left: 50px;
+}
+
+.table-container {
+  width: 50%;
 }
   /* Estilos para las etiquetas de fecha */
   label[for="fechaInicio"], label[for="fechaFin"] {
