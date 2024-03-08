@@ -6,38 +6,27 @@
     <h1>Reporte Operativo</h1>
     <h2>Transacciones Bancos</h2>
     <form @submit.prevent="filtrarDatos">
-    <label for="fechaInicio" style="font-size: 24px; font-weight: bold; padding-right: 10px; font-family: Arial, sans-serif;">Fecha de Inicio:</label>
-    <input type="date" v-model="fechaInicio" maxlength="10" style="margin-right:10px; width: 150px;height: 30px;">
-
-    <label for="fechaFin" style="font-size: 24px; font-weight: bold; padding-right: 10px; font-family: Arial, sans-serif;">Fecha de Fin:</label>
-    <input type="date" v-model="fechaFin" maxlength="10" style="margin-right:10px; width: 150px; height: 30px;">
-
-    <button class="boton-filtrar" type="submit">Filtrar</button>
+      <label for="fechaInicio" style="font-size: 24px; font-weight: bold; padding-right: 10px; font-family: Arial, sans-serif;">Fecha de Inicio:</label>
+      <input type="date" v-model="fechaInicio" maxlength="10" style="margin-right:10px; width: 150px;height: 30px;">
+      <label for="fechaFin" style="font-size: 24px; font-weight: bold; padding-right: 10px; font-family: Arial, sans-serif;">Fecha de Fin:</label>
+      <input type="date" v-model="fechaFin" maxlength="10" style="margin-right:10px; width: 150px; height: 30px;">
+      <button class="boton-filtrar" type="submit">Filtrar</button>
     </form>
     <button class="boton-descargar" @click="downloadPDF">Descargar PDF</button>
     <button class="boton-descargar" @click="exportExcel">Descargar XLS</button>
-
     <table class="table">
       <thead>
         <tr>
-          <!--<th>ID Transaccion</th>-->
-          <!--<th>ID Cuenta</th>-->
           <th>Fecha Contable</th>
-          <!--<th>Monto</th>-->
           <th>Saldo</th>
-          <!-- <th>Descripcion</th>-->
           <th>Status</th>
           <th>Banco</th>
         </tr>
       </thead>
       <tbody>
         <tr v-for="(adeudo, index) in resultados" :key="index">
-          <!--<td>{{ adeudo['id_transaccion'] }}</td>-->
-          <!--<td>{{ adeudo['id_cuenta'] }}</td>-->
           <td>{{ adeudo['fecha_contable'] }}</td>
-           <!--<td>{{ adeudo['monto'] }}</td>-->
-           <td>${{ parseFloat(adeudo['saldo']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
-          <!--<td>{{ adeudo['descripcion'] }}</td>-->
+          <td>${{ parseFloat(adeudo['saldo']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
           <td>{{ adeudo['estado'] }}</td>
           <td>{{ adeudo['banco'] }}</td>
         </tr>
@@ -45,80 +34,64 @@
     </table>
     <br>
     <div class="content-container">
-    <div class="chart-container">
+      <div class="chart-container">
         <canvas id="myChart"></canvas>
       </div>
-    <!-- Nueva tabla con las sumas totales -->
-    <div class="table-container">
-    <table class="tabla-totales">
-      <thead>
-        <tr>
-        <th>Banco</th>
-        <th>Saldo Final</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="(saldo, banco) in totalesPorBanco" :key="banco">
-          <td>{{ banco }}</td>
-          <td>${{ Number(saldo).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-</div>
+      <!-- Nueva tabla con las sumas totales -->
+      <div class="table-container">
+        <table class="tabla-totales">
+          <thead>
+            <tr>
+              <th>Banco</th>
+              <th>Saldo Final</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(saldo, banco) in totalesPorBanco" :key="banco">
+              <td>{{ banco }}</td>
+              <td>${{ Number(saldo).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
 import axios from "axios";
-import ExcelJS from 'exceljs';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 import Chart from 'chart.js/auto';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 export default {
   data() {
     return {
       resultados: [],
       resultadosOriginales: [],
-      idTipo: null,
-      estatus: null,
       fechaInicio: null,
       fechaFin: null,
       totalesPorBanco: {},
       myChart: null,
     };
   },
-  computed: {
-    totalCargo() {
-      return this.resultados.reduce((total, adeudo) => total + Number(adeudo.cargo), 0);
-    },
-    totalAbono() {
-      return this.resultados.reduce((total, adeudo) => total + Number(adeudo.abono), 0);
-    },
-    totalSaldo() {
-      return this.resultados.reduce((total, resu) => total + Number(resu.cargo) - Number(resu.abono), 0);
-    }
-  },
   methods: {
-    filtrarDatos() {
+    async filtrarDatos() {
       if (this.fechaInicio && this.fechaFin) {
-        const url = "http://189.165.26.146:8081/admin/get.php/transaccionesbanco";
+        const url = "http://189.165.88.82:8081/admin/get.php/transaccionesbanco";
         const params = {
           fechaInicio: this.fechaInicio,
           fechaFin: this.fechaFin,
         };
 
-        axios
-          .get(url, { params })
-          .then((response) => {
-            this.resultadosOriginales = response.data.data;
-            this.resultados = [...this.resultadosOriginales];
-            this.calcularUltimoSaldoPorBanco();
-          })
-          .catch((error) => {
-            console.error("Error al obtener datos de la API:", error);
-          });
+        try {
+          const response = await axios.get(url, { params });
+          this.resultadosOriginales = response.data.data;
+          this.resultados = [...this.resultadosOriginales];
+          this.calcularUltimoSaldoPorBanco();
+        } catch (error) {
+          console.error("Error al obtener datos de la API:", error);
+        }
       } else {
         this.resultados = [];
         this.totalesPorBanco = {};
@@ -140,109 +113,131 @@ export default {
       this.generateChart();
     },
     generateChart() {
-      var bancos = Object.keys(this.totalesPorBanco);
-      var saldos = Object.values(this.totalesPorBanco);
-      var ctx = document.getElementById('myChart').getContext('2d');
+      const bancos = Object.keys(this.totalesPorBanco);
+      const saldos = Object.values(this.totalesPorBanco);
+      const ctx = document.getElementById('myChart').getContext('2d');
       
       this.myChart = new Chart(ctx, {
-          type: 'bar',
-          data: {
-              labels: bancos,
-              datasets: [{
-                  label: `Saldo por Banco del ${this.fechaInicio} al ${this.fechaFin}`,
-                  data: saldos,
-                  backgroundColor: 'rgba(96, 150, 96, 0.2)',
-                  borderColor: 'rgba(96, 150, 96, 1)',
-                  borderWidth: 1
-              }]
-          },
-          options: {
-              scales: {
-                  y: {
-                      beginAtZero: true
-                  }
-              }
+        type: 'bar',
+        data: {
+          labels: bancos,
+          datasets: [{
+            label: `Saldo por Banco del ${this.fechaInicio} al ${this.fechaFin}`,
+            data: saldos,
+            backgroundColor: 'rgba(96, 150, 96, 0.2)',
+            borderColor: 'rgba(96, 150, 96, 1)',
+            borderWidth: 1
+          }]
+        },
+        options: {
+          scales: {
+            y: {
+              beginAtZero: true
+            }
           }
+        }
       });
     },
-    downloadPDF() {
-      const pdfOptions = {
-        orientation: "portrait",
-        unit: "mm",
-        format: "letter",
-      };
+    async downloadPDF() {
+  let doc = new jsPDF();
+  let yOffset = 10;
 
-      const doc = new jsPDF(pdfOptions);
+  // Encabezado del PDF
+  doc.text('Reporte Operativo', doc.internal.pageSize.getWidth() / 2, yOffset, { align: 'center', fontStyle: 'bold' });
+  doc.text('Transacciones Bancos', doc.internal.pageSize.getWidth() / 2, yOffset + 10, { align: 'center' });
+  doc.text(`Fecha de Inicio: ${this.fechaInicio} - Fecha de Fin: ${this.fechaFin}`, doc.internal.pageSize.getWidth() / 2, yOffset + 20, { align: 'center', fontSize: 12 });
 
-      html2canvas(this.$el, { scale: 3 })
-        .then(canvas => {
-          let imgData = canvas.toDataURL('image/jpeg', 0.1);
+  // Generar tabla de transacciones bancarias
+  const tableData = [];
+  this.resultados.forEach(adeudo => {
+    const rowData = [
+      adeudo.fecha_contable,
+      `$${parseFloat(adeudo.saldo).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+      adeudo.estado,
+      adeudo.banco
+    ];
+    tableData.push(rowData);
+  });
 
-          let imgWidth = 200;
-          let imgHeight = (canvas.height * imgWidth) / canvas.width;
+  // Agregar tabla de transacciones bancarias al PDF
+  autoTable(doc, {
+    head: [['Fecha Contable', 'Saldo', 'Status', 'Banco']],
+    body: tableData,
+    startY: yOffset + 40,
+    headStyles: { fillColor: '#A2DA6A', textColor: '#000000' } 
+  });
 
-          let marginLeft = (doc.internal.pageSize.getWidth() - imgWidth) / 2;
-          let marginTop = 10;
-
-          doc.addImage(imgData, 'JPEG', marginLeft, marginTop, imgWidth, imgHeight);
-
-          doc.save('informe_financiero_SaldosBancos.pdf');
-        })
-        .catch(error => {
-          console.error('Error al capturar la representación gráfica de la tabla:', error);
-        });
-    },
-    async exportExcel() {
-      const workbook = new ExcelJS.Workbook();
-      const worksheet = workbook.addWorksheet('Sheet1');
-      const tables = this.$el.querySelectorAll('table');
-
-      let rowIndex = 1;
-
-      for (let i = 0; i < tables.length; i++) {
-        const table = tables[i];
-
-        // Convertir la tabla HTML a un array de arrays
-        const data = Array.from(table.querySelectorAll('tr')).map(tr =>
-          Array.from(tr.querySelectorAll('td, th')).map(td => td.innerText)
-        );
-
-        // Agregar los datos a la hoja de Excel
-        data.forEach((row, localRowIndex) => {
-          row.forEach((value, colIndex) => {
-            const cell = worksheet.getCell(rowIndex + localRowIndex, colIndex + 1);
-            cell.value = value;
-
-            // Aplicar negrita a los encabezados de cada columna
-            if (localRowIndex === 0) {
-              cell.font = { bold: true };
-            }
-
-            // Ajustar el ancho de las columnas específicas
-            if (colIndex === 0) {
-              worksheet.getColumn(colIndex + 1).width = 50; // Primera columna
-            } else if (colIndex === 1 || colIndex === 2 || colIndex === 3) {
-              worksheet.getColumn(colIndex + 1).width = 20; // todas las demas columnas
-            }
-          });
-        });
-
-        rowIndex += data.length + 1; // Dejar una fila vacía entre las tablas
-      }
-
-      // Guardar el libro de trabajo como un archivo .xlsx
-      const buffer = await workbook.xlsx.writeBuffer();
-      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'informeFinacieroSaldosBancos.xlsx';
-      a.click();
-    },
+  // Generar tabla de totales por banco
+  const totalTableData = [];
+  for (const [banco, saldo] of Object.entries(this.totalesPorBanco)) {
+    totalTableData.push([banco, `$${Number(saldo).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`]);
   }
+
+  // Agregar tabla de totales por banco al PDF
+  autoTable(doc, {
+    head: [['Banco', 'Saldo Final']],
+    body: totalTableData,
+    startY: doc.lastAutoTable.finalY + 10,
+    headStyles: { fillColor: '#A2DA6A', textColor: '#000000' } 
+  });
+
+  // Crear el gráfico solo si el canvas está presente en el DOM
+  const canvas = document.getElementById('myChart');
+  if (canvas) {
+    // Destruir el gráfico existente si existe
+    if (this.myChart) {
+      this.myChart.destroy();
+    }
+
+    // Generar el gráfico
+    const ctx = canvas.getContext('2d');
+    this.myChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: Object.keys(this.totalesPorBanco),
+        datasets: [{
+          label: `Saldo por Banco del ${this.fechaInicio} al ${this.fechaFin}`,
+          data: Object.values(this.totalesPorBanco),
+          backgroundColor: 'rgba(96, 150, 96, 0.2)',
+          borderColor: 'rgba(96, 150, 96, 1)',
+          borderWidth: 1
+        }]
+      },
+      options: {
+        scales: {
+          y: {
+            beginAtZero: true
+          }
+        }
+      }
+    });
+
+    // Exportar el gráfico como imagen
+    const chartImage = await this.myChart.toBase64Image();
+
+    // Agregar la imagen del gráfico al PDF
+    const imgProps = doc.getImageProperties(chartImage);
+    const aspectRatio = imgProps.width / imgProps.height;
+    const imgWidth = doc.internal.pageSize.getWidth() - 20;
+    const imgHeight = imgWidth / aspectRatio;
+    doc.addImage(chartImage, 'PNG', 10, doc.lastAutoTable.finalY + 20, imgWidth, imgHeight);
+  }
+
+  // Footer del PDF
+  const totalPages = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
+    doc.setFontSize(10);
+    doc.text('Página ' + i + ' de ' + totalPages, doc.internal.pageSize.getWidth() - 80, doc.internal.pageSize.getHeight() - 10);
+  }
+
+  // Guardar el PDF
+  doc.save('Reporte_Transacciones_Bancos.pdf');
+}
+
+  },
 };
 </script>
-
 
 
 
