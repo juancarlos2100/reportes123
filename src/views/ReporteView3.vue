@@ -69,54 +69,43 @@
 
 <script>
 import axios from "axios";
-//import * as XLSX from 'xlsx';
-import ExcelJS from 'exceljs'
+//import Chart from 'chart.js/auto';
 import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+import autoTable from 'jspdf-autotable';
 
 export default {
   data() {
     return {
       resultados: [],
+      resultadosOriginales: [], // Nuevo atributo
       idTipo: null,
       estatus: null,
       fechaInicio: null,
       fechaFin: null,
-      totalesPorNombre: {}, // Nuevo atributo
+      totalesPorNombre: {},
     };
   },
-  mounted() {
-    axios
-      .get("https://sistemas-oktan.com/admin/get.php/saldospipas")
-      .then((response) => {
-        this.resultados = response.data.data;
-        console.log(this.resultados);
-        this.calcularTotalesPorNombre();
-        this.generateChart();
-      })
-      .catch((error) => {
-        console.error("Error al obtener datos de la API:", error);
-      });
-  },
   methods: {
-    filtrarDatos() {
-      let resultadosFiltrados = this.resultados;
+    async filtrarDatos() {
+      if (this.fechaInicio && this.fechaFin) {
+        const url = "http://192.168.1.90/admin/get.php/saldospipas";
+        const params = {
+          fechaInicio: this.fechaInicio,
+          fechaFin: this.fechaFin,
+        };
 
-      if (this.idTipo) {
-        resultadosFiltrados = resultadosFiltrados.filter(adeudo => adeudo['id_proveedor'] === this.idTipo);
-      } else if (this.estatus) {
-        resultadosFiltrados = resultadosFiltrados.filter(adeudo => adeudo['estatus'].toLowerCase() === this.estatus.toLowerCase());
-      } else if (this.fechaInicio && this.fechaFin) {
-        resultadosFiltrados = resultadosFiltrados.filter(adeudo => {
-          const fechaCreacion = new Date(adeudo['fecha_creacion']);
-          const fechaInicio = new Date(this.fechaInicio);
-          const fechaFin = new Date(this.fechaFin);
-          return fechaCreacion >= fechaInicio && fechaCreacion <= fechaFin;
-        });
+        try {
+          const response = await axios.get(url, { params });
+          this.resultadosOriginales = response.data.data;
+          this.resultados = [...this.resultadosOriginales];
+          this.calcularTotalesPorNombre();
+        } catch (error) {
+          console.error("Error al obtener datos de la API:", error);
+        }
+      } else {
+        this.resultados = [...this.resultadosOriginales];
+        this.calcularTotalesPorNombre();
       }
-
-      this.resultados = resultadosFiltrados;
-      this.calcularTotalesPorNombre();
     },
     calcularTotalesPorNombre() {
       this.totalesPorNombre = this.resultados.reduce((totales, adeudo) => {
@@ -129,94 +118,71 @@ export default {
         return totales;
       }, {});
     },
-    downloadPDF() {
-      const pdfOptions = {
-        orientation: "portrait",
-        unit: "mm",
-        format: "letter",
-      };
+    async downloadPDF() {
+  let doc = new jsPDF();
+  let yOffset = 10;
 
-      const doc = new jsPDF(pdfOptions);
+  // Encabezado del PDF
+  doc.text('Reporte Operativo', doc.internal.pageSize.getWidth() / 2, yOffset, { align: 'center', fontStyle: 'bold' });
+  doc.text('Saldos Proveedores', doc.internal.pageSize.getWidth() / 2, yOffset + 10, { align: 'center' });
+  doc.text('Pipas por pagar', doc.internal.pageSize.getWidth() / 2, yOffset + 20, { align: 'center' });
+  doc.text(`Del:  ${this.fechaInicio} al:  ${this.fechaFin}`, doc.internal.pageSize.getWidth() / 2, yOffset + 30, { align: 'center', fontSize: 12 });
 
-      html2canvas(this.$el, { scale: 3 })
-        .then(canvas => {
-          let imgData = canvas.toDataURL('image/jpeg', 0.1);
+  // Generar tabla de saldos de proveedores
+  const tableData = [];
+  this.resultados.forEach(adeudo => {
+    const rowData = [
+      adeudo.folio,
+      `$${parseFloat(adeudo.saldo).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+      adeudo.fecha_creacion,
+      adeudo.nombre
+    ];
+    tableData.push(rowData);
+  });
 
-          let imgWidth = 200;
-          let imgHeight = (canvas.height * imgWidth) / canvas.width;
+  // Agregar tabla de saldos de proveedores al PDF
+  autoTable(doc, {
+    head: [['Folio-Factura', 'Saldo', 'Fecha', 'Nombre']],
+    body: tableData,
+    startY: yOffset + 50,
+    headStyles: { fillColor: '#A2DA6A', textColor: '#000000' }
+  });
 
-          let marginLeft = (doc.internal.pageSize.getWidth() - imgWidth) / 2;
-          let marginTop = 10;
+  // Generar tabla de sumas totales por nombre
+  const totalTableData = [];
+  for (const [nombre, total] of Object.entries(this.totalesPorNombre)) {
+    totalTableData.push([total.factura.toFixed(2), `$${parseFloat(total.saldo).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, nombre]);
+  }
 
-          doc.addImage(imgData, 'JPEG', marginLeft, marginTop, imgWidth, imgHeight);
+  // Agregar tabla de sumas totales por nombre al PDF
+  autoTable(doc, {
+    head: [['Factura', 'Importe', 'Pipas por pagar']],
+    body: totalTableData,
+    startY: doc.lastAutoTable.finalY + 10,
+    headStyles: { fillColor: '#A2DA6A', textColor: '#000000' }
+  });
 
-          doc.save('informe_financiero.pdf');
-        })
-        .catch(error => {
-          console.error('Error al capturar la representación gráfica de la tabla:', error);
-        });
-    },
-    exportExcel() {
-        this.$nextTick(async () => {
-          const workbook = new ExcelJS.Workbook();
-          const worksheet = workbook.addWorksheet('Sheet1');
-          const tables = this.$el.querySelectorAll('table');
+  // Generar gráfico
 
-          let rowIndex = 1;
+  
 
-          const headers = this.$el.querySelectorAll('h1');
-          headers.forEach(header => {
-            const titleCell = worksheet.getCell(rowIndex, 1);
-            titleCell.value = header.textContent.trim();
-            titleCell.font = { bold: true, size: 14 }; // Hacer el título negrita y un poco más grande
-            rowIndex++;
-          });
+  // Footer del PDF
+  const totalPages = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
+    doc.setFontSize(10);
+    doc.text('Página ' + i + ' de ' + totalPages, doc.internal.pageSize.getWidth() - 80, doc.internal.pageSize.getHeight() - 10);
+  }
 
-          for (let i = 0; i < tables.length; i++) {
-            const table = tables[i];
+  // Guardar el PDF
+  doc.save('Reporte_Saldos_Proveedores.pdf');
+}
 
-            // Convertir la tabla HTML a un array de arrays
-            const data = Array.from(table.querySelectorAll('tr')).map(tr =>
-              Array.from(tr.querySelectorAll('td, th')).map(td => td.innerText)
-            );
-
-            // Agregar los datos a la hoja de Excel
-            data.forEach((row, localRowIndex) => {
-              row.forEach((value, colIndex) => {
-                const cell = worksheet.getCell(rowIndex + localRowIndex, colIndex + 1);
-                cell.value = value;
-
-                // Aplicar negrita a los encabezados de cada columna
-                if (localRowIndex === 0) {
-                  cell.font = { bold: true };
-                }
-
-                // Ajustar el ancho de las columnas específicas
-                if (colIndex === 0) {
-                  worksheet.getColumn(colIndex + 1).width = 50; // Primera columna
-                } else if (colIndex === 1 || colIndex === 2 || colIndex === 3) {
-                  worksheet.getColumn(colIndex + 1).width = 20; // todas las demas columnas
-                }
-              });
-            });
-
-            rowIndex += data.length + 1; // Dejar una fila vacía entre las tablas
-          }
-
-          // Guardar el libro de trabajo como un archivo .xlsx
-          const buffer = await workbook.xlsx.writeBuffer();
-          const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = 'informe_financieroOKTAN.xlsx';
-          a.click();
-        });
-      },
     // ...resto de métodos...
   },
 };
 </script>
+
 
 
 

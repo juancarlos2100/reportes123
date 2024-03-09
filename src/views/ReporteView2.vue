@@ -78,7 +78,7 @@ export default {
   methods: {
     async filtrarDatos() {
       if (this.fechaInicio && this.fechaFin) {
-        const url = "http://189.165.88.82:8081/admin/get.php/transaccionesbanco";
+        const url = "http://192.168.1.90/admin/get.php/transaccionesbanco";
         const params = {
           fechaInicio: this.fechaInicio,
           fechaFin: this.fechaFin,
@@ -143,9 +143,9 @@ export default {
   let yOffset = 10;
 
   // Encabezado del PDF
-  doc.text('Reporte Operativo', doc.internal.pageSize.getWidth() / 2, yOffset, { align: 'center', fontStyle: 'bold' });
+  doc.text('Reporte Operativo', doc.internal.pageSize.getWidth() / 2, yOffset, { align: 'center', fontStyle: 'bolder' });
   doc.text('Transacciones Bancos', doc.internal.pageSize.getWidth() / 2, yOffset + 10, { align: 'center' });
-  doc.text(`Fecha de Inicio: ${this.fechaInicio} - Fecha de Fin: ${this.fechaFin}`, doc.internal.pageSize.getWidth() / 2, yOffset + 20, { align: 'center', fontSize: 12 });
+  doc.text(`Del: ${this.fechaInicio} - al : ${this.fechaFin}`, doc.internal.pageSize.getWidth() / 2, yOffset + 20, { align: 'center', fontSize: 12 });
 
   // Generar tabla de transacciones bancarias
   const tableData = [];

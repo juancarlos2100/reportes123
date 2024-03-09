@@ -5,15 +5,15 @@
     </header>
     <h1>Reporte Operativo</h1>
     <h2>Efectivo por depositar</h2>
-    <form @submit.prevent="filtrarDatos"> <label for="idTurno" style="font-size: 20px; font-weight: bold; padding-right: 10px;">ID Turno:</label>
+    <form @submit.prevent="filtrarDatos"> 
+      <label for="idTurno" style="font-size: 20px; font-weight: bold; padding-right: 10px;">ID Turno:</label>
       <input type="text" v-model="idTurno" style="margin-right:10px;">
 
-      <label for="fechaInicio" style="font-size: 20px; font-weight: bold; padding-right: 10px;" >Fecha de Inicio:</label>
+      <label for="fechaInicio" style="font-size: 20px; font-weight: bold; padding-right: 10px;">Fecha de Inicio:</label>
       <input type="date" v-model="fechaInicio" style="margin-right:10px;">
       
       <label for="fechaFin" style="font-size: 20px; font-weight: bold; padding-right: 10px;">Fecha de Fin:</label>
       <input type="date" v-model="fechaFin" style="margin-right:10px;">
-
 
       <button class="boton-filtrar" type="submit">Filtrar</button>
     </form>
@@ -22,7 +22,7 @@
     <table>
       <thead>
         <tr>
-           <!--<th>ID Proveedor</th>-->
+          <!--<th>ID Proveedor</th>-->
           <!--<th>Estatus</th>-->
           <th>id_turno</th>
           <th>Fecha</th>
@@ -38,29 +38,29 @@
           <td>{{ adeudo['fecha'] }}</td>
           <td>{{ parseFloat(adeudo['monto']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
           <td>${{ parseFloat(adeudo['monto_depositado']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
-          <td>${{ parseFloat(adeudo['diferencia']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>>
+          <td>${{ parseFloat(adeudo['diferencia']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
         </tr>
       </tbody>
     </table>
     <!-- Nueva tabla con las sumas totales -->
     <table class="tabla-totales">
-    <thead>
-      <tr>
-        <th>Efectivo por depositar</th> <!-- Cambiado 'Factura' por 'Efectivo por depositar' -->
-        <th>Importe</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr v-for="(adeudo, index) in resultadosFiltrados" :key="index">
-        <td>{{ adeudo['id_turno'] }}</td> <!-- Cambiado 'total.factura.toFixed(2)' por 'adeudo['id_turno']' -->
-        <td>${{ adeudo['diferencia'] }}</td> <!-- Cambiado 'total.saldo.toFixed(2)' por 'adeudo['diferencia']' -->
-      </tr>
-      <tr>
-        <td><strong>Total</strong></td>
-        <td>${{ totalImporte.toFixed(2) }}</td> <!-- Nueva fila para el total -->
-      </tr>
-    </tbody>
-  </table>
+      <thead>
+        <tr>
+          <th>Efectivo por depositar</th> <!-- Cambiado 'Factura' por 'Efectivo por depositar' -->
+          <th>Importe</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="(adeudo, index) in resultadosFiltrados" :key="index">
+          <td>{{ adeudo['id_turno'] }}</td> <!-- Cambiado 'total.factura.toFixed(2)' por 'adeudo['id_turno']' -->
+          <td>${{ adeudo['diferencia'] }}</td> <!-- Cambiado 'total.saldo.toFixed(2)' por 'adeudo['diferencia']' -->
+        </tr>
+        <tr>
+          <td><strong>Total</strong></td>
+          <td>${{ totalImporte.toFixed(2) }}</td> <!-- Nueva fila para el total -->
+        </tr>
+      </tbody>
+    </table>
     <div style="display: flex; justify-content: center; width: 25%; height: 25%;">
       <div style="width: 120%; height: 120%;">
         <canvas id="myChartPositive"></canvas>
@@ -68,6 +68,7 @@
     </div>
   </div>
 </template>
+
 
 <script>
 import axios from "axios";
@@ -89,7 +90,7 @@ export default {
   },
   mounted() {
     axios
-        .get("https://sistemas-oktan.com/admin/get.php/depositoefectivo")
+        .get("http://192.168.1.90/admin/get.php/depositoefectivo")
         .then((response) => {
           this.resultados = response.data.data.map(resu => {
             return {
