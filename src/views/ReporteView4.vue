@@ -90,7 +90,7 @@ export default {
   },
   mounted() {
     axios
-        .get("http://192.168.1.90/admin/get.php/depositoefectivo")
+        .get("https://sistemas-oktan.com/admin/get.php/depositoefectivo")
         .then((response) => {
           this.resultados = response.data.data.map(resu => {
             return {
