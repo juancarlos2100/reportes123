@@ -20,7 +20,8 @@
     
     <div class="container" style="display: flex; height: 100%;">
       <!-- Lado izquierdo -->
-      <div class="left-container" style="flex: 0 0 55%; overflow: auto;">
+      <div class="left-container" style="flex: 0 0 40%; overflow: auto;">
+        <h1>Transacciones Registradas</h1>
         <table class="table">
           <thead>
             <tr>
@@ -46,7 +47,22 @@
           </tbody>
         </table>
         <br>
-        <table class="tabla-totales">
+    
+      </div>
+
+      <!-- Lado derecho -->
+      <div class="right-container" style="flex: 0 0 60%; overflow: auto;">
+        <h1>Tablero de Gráficas</h1>
+        <div class="chart-container">
+          <canvas id="myChart"></canvas>
+        </div>
+        <!-- Nuevo gráfico de pastel (chart2) -->
+        <div class="chart-container">
+          <canvas id="myPieChart"></canvas>
+        </div>
+        <div class="cont-total">
+        <h1>Total por Proveedor</h1>
+          <table class="tabla-totales">
           <thead>
             <tr>
               <th>Factura</th>
@@ -62,16 +78,6 @@
             </tr>
           </tbody>
         </table>
-      </div>
-
-      <!-- Lado derecho -->
-      <div class="right-container" style="flex: 0 0 45%; overflow: auto;">
-        <div class="chart-container">
-          <canvas id="myChart"></canvas>
-        </div>
-        <!-- Nuevo gráfico de pastel (chart2) -->
-        <div class="chart-container">
-          <canvas id="myPieChart"></canvas>
         </div>
       </div>
       </div>
@@ -99,7 +105,7 @@ export default {
   methods: {
     async filtrarDatos() {
       if (this.fechaInicio && this.fechaFin) {
-        const url = "https://sistemas-oktan.com/admin/get.php/saldospipas";
+        const url = "http://gasserver.dyndns.org:8081/admin/get.php/saldospipas";
         const params = {
           fechaInicio: this.fechaInicio,
           fechaFin: this.fechaFin,
@@ -143,23 +149,46 @@ export default {
   
   const ctx = document.getElementById('myChart').getContext('2d');
 
-  // Define una matriz de colores para cada rebanada
-  const colores = [
-    'rgba(255, 100, 10, 0.4)',
-    'rgba(0, 207, 24, 0.4)',
-    'rgba(255, 183, 0, 0.4)',
-    // Añade más colores según sea necesario
-  ];
+    // Define una matriz de colores para cada rebanada
+    const colores = [
+    'rgba(255, 100, 10, 0.4)',   // Naranja claro
+    'rgba(0, 207, 24, 0.4)',    // Verde claro
+    'rgba(255, 183, 0, 0.4)',   // Amarillo claro
+    'rgba(0, 0, 255, 0.4)',     // Azul
+    'rgba(255, 0, 0, 0.4)',     // Rojo
+    'rgba(255, 193, 7, 0.4)',   // Amarillo pastel
+    'rgba(29, 233, 182, 0.4)',  // Verde pastel
+    'rgba(255, 99, 132, 0.4)',  // Rosa pastel
+    'rgba(173, 216, 230, 0.4)', // Azul pastel
+    'rgba(222, 159, 64, 0.4)',  // Naranja pastel
+    'rgba(255, 205, 210, 0.4)', // Rosa claro
+    'rgba(144, 238, 144, 0.4)', // Verde claro
+    'rgba(173, 255, 47, 0.4)',  // Verde amarilloso
+    'rgba(176, 224, 230, 0.4)', // Azul cielo
+    'rgba(220, 208, 255, 0.4)', // Lavanda
+];
 
   // Define una matriz de colores de resaltado para cada rebanada
   const coloresResaltados = [
-    'rgba(255, 100, 10, 0.7)',
-    'rgba(0, 207, 24, 0.7)',
-    'rgba(255, 228, 196, 0.5)',
-    // Añade más colores de resaltado según sea necesario
+    'rgba(255, 100, 10, 0.9)',   // Naranja claro
+    'rgba(0, 207, 24, 0.9)',    // Verde claro
+    'rgba(255, 183, 0, 0.9)',   // Amarillo claro
+    'rgba(0, 0, 255, 0.9)',     // Azul
+    'rgba(255, 0, 0, 0.9)',     // Rojo
+    'rgba(255, 193, 7, 0.9)',   // Amarillo pastel
+    'rgba(29, 233, 182, 0.9)',  // Verde pastel
+    'rgba(255, 99, 132, 0.9)',  // Rosa pastel
+    'rgba(173, 216, 230, 0.9)', // Azul pastel
+    'rgba(222, 159, 64, 0.9)',  // Naranja pastel
+    'rgba(255, 205, 210, 0.9)', // Rosa claro
+    'rgba(144, 238, 144, 0.9)', // Verde claro
+    'rgba(173, 255, 47, 0.9)',  // Verde amarilloso
+    'rgba(176, 224, 230, 0.9)', // Azul cielo
+    'rgba(220, 208, 255, 0.9)', // Lavanda
   ];
 
   // Gráfico de barras
+  let delayed;
   this.myChart = new Chart(ctx, {
     type: 'bar',
     data: {
@@ -175,11 +204,28 @@ export default {
       }]
     },
     options: {
+      indexAxis: 'y',
+      
       scales: {
-        y: {
-          beginAtZero: true
-        }
+      x: {
+        stacked: true,
       },
+      y: {
+        stacked: true
+      }
+    },
+      animation: {
+      onComplete: () => {
+        delayed = true;
+      },
+      delay: (context) => {
+        let delay = 0;
+        if (context.type === 'data' && context.mode === 'default' && !delayed) {
+          delay = context.dataIndex * 400 + context.datasetIndex * 200;
+        }
+        return delay;
+      },
+      responsive: true,
       plugins: {
         title: {
           display: true,
@@ -190,12 +236,13 @@ export default {
         duration: 3000 // Ajusta la duración de la animación a 2000 milisegundos (2 segundos)
       }
     }
+  }
   });
 
   // Gráfico de pastel
   const ctx2 = document.getElementById('myPieChart').getContext('2d');
   this.myPieChart = new Chart(ctx2, {
-    type: 'pie',
+    type: 'doughnut',
     data: {
       labels: nombres,
       datasets: [{
@@ -302,11 +349,12 @@ async downloadPDF() {
 .content-container {
   display: flex;
   justify-content: space-between;
+  margin-top: 50px;
 }
 
 .chart-container {
   width: 95%;
-  height: 500px;
+  height: 800px;
   margin-left: 5px;
   margin-right: 10px;
 }
@@ -320,31 +368,38 @@ async downloadPDF() {
     font-size: 20px; /* Cambiar el tamaño de fuente */
   }
 
-table {
-  width: 90%;
+  table {
+  width: 95%;
   border-collapse: collapse;
   margin-top: 20px; /* Ajusta según sea necesario */
   margin-left: auto;
   margin-right: auto;
+  margin-bottom: 100px;
   transition: transform 0.5s ease, box-shadow 0.5s ease;
-  
 }
+
+/* Reducir el ancho de la primera columna a la mitad */
+table tr td:first-child {
+  width: 20%;
+}
+
 .table:hover {
   transform: translateY(-0.3rem);
   box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2);
 }
 .tabla-totales {
-  width: 850px; /* Cambia esto al ancho que desees */
+  width: 800px; /* Cambia esto al ancho que desees */
   height: auto; /* Cambia esto a la altura que desees */
   margin-left: auto;
-  margin-right: 70px;
+  margin-right: 200px;
   transition: transform 0.5s ease, box-shadow 0.5s ease;
   
   
 }
 .tabla-totales:hover {
-  transform: translateY(-1rem)scale(1.06);
-  box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.6);
+  transform: translateY(-1rem)scale(1.04);
+  transform: translateX(-3rem)scale(1.04);
+  box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.9);
 }
 
 .tabla-totales th,
@@ -354,10 +409,7 @@ table {
 }
 
 
-td:first-child {
-  /* Establece el ancho de la primera columna */
-  width: 300px;  /* Ajusta este valor según tus necesidades */
-}
+
 
 
 th,
@@ -436,6 +488,10 @@ th {
 
 .boton-filtrar:active {
   transform: scale(1.2); /* Aumentar un poco el tamaño al hacer clic */
+}
+.cont-total{
+  margin-top: 60px;
+  align-items: center;
 }
 </style>
 
