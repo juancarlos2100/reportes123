@@ -5,64 +5,82 @@
     </header>
     <h1>Reporte Operativo</h1>
     <h2>Transacciones Bancos</h2>
-    <form @submit.prevent="filtrarDatos">
-      <label for="fechaInicio" style="font-size: 24px; font-weight: bold; padding-right: 10px; font-family: Arial, sans-serif;">Fecha de Inicio:</label>
-      <input type="date" v-model="fechaInicio" maxlength="10" style="margin-right:10px; width: 150px;height: 30px;">
-      <label for="fechaFin" style="font-size: 24px; font-weight: bold; padding-right: 10px; font-family: Arial, sans-serif;">Fecha de Fin:</label>
-      <input type="date" v-model="fechaFin" maxlength="10" style="margin-right:10px; width: 150px; height: 30px;">
-      <button class="boton-filtrar" type="submit">Filtrar</button>
-    </form>
-    <button class="boton-descargar" @click="downloadPDF">Descargar PDF</button>
-    <button class="boton-descargar" @click="exportExcel">Descargar XLS</button>
+    <div> 
+      <form @submit.prevent="filtrarDatos">
+        <label for="estacion" style="font-size: 24px; font-weight: bold; padding-right: 10px; font-family: Arial, sans-serif;">Estación:</label>
+        <select id="estacion" v-model="dbm" style="width: 400px; height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;">
+          <option v-for="(nombre, id) in estaciones" :key="id" :value="id">{{ nombre }}</option>
+        </select>
+
+        <label for="fechaInicio" style="font-size: 24px; font-weight: bold; padding-right: 10px; font-family: Arial, sans-serif;">Fecha de Inicio:</label>
+        <input type="date" v-model="fechaInicio" maxlength="10" style="margin-right:10px; width: 150px;height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;">
+        <label for="fechaFin" style="font-size: 24px; font-weight: bold; padding-right: 10px; font-family: Arial, sans-serif;">Fecha de Fin:</label>
+        <input type="date" v-model="fechaFin" maxlength="10" style="margin-right:10px; width: 150px; height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;">
+
+        <button class="boton-filtrar" type="submit">Filtrar</button>
+      </form>
+      <button class="boton-descargar" @click="downloadPDF">Descargar PDF</button>
+      <button class="boton-descargar" @click="exportExcel">Descargar XLS</button>
+    </div>
 
     <div class="container" style="display: flex; height: 100%;">
       <!-- Lado izquierdo -->
-      <div class="left-container" style="flex: 0 0 55%; overflow: auto;">
+      <div class="left-container" style="flex: 0 0 40%; overflow: auto;">
+        <h1>Transacciones Registradas</h1>
         <table class="table">
           <thead>
             <tr>
+              <th>id de estacion</th>
               <th>Fecha Contable</th>
               <th>Saldo</th>
-              <th>Status</th>
+              <!--<th>Status</th>-->
               <th>Banco</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody v-if="mostrarResultados">
             <tr v-for="(adeudo, index) in resultados" :key="index">
+              <td>{{ adeudo['id_dbm'] }}</td>
               <td>{{ adeudo['fecha_contable'] }}</td>
               <td>${{ parseFloat(adeudo['saldo']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
-              <td>{{ adeudo['estado'] }}</td>
+              <!--<td>{{ adeudo['estado'] }}</td>-->
               <td>{{ adeudo['banco'] }}</td>
+            </tr>
+          </tbody>
+          <tbody v-else>
+            <tr>
+              <td colspan="5">No se encontraron registros que coincidan con su búsqueda</td>
             </tr>
           </tbody>
         </table>
         <br>
-        <div class="table-container">
-          <table class="tabla-totales">
-            <thead>
-              <tr>
-                <th>Banco</th>
-                <th>Saldo Final</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="(saldo, banco) in totalesPorBanco" :key="banco">
-                <td><strong>{{ banco }}</strong></td>
-                <td><strong>${{ Number(saldo).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
       </div>
 
   <!-- Lado derecho -->
-  <div class="right-container" style="flex: 0 0 45%; overflow: auto;">
+  <div class="right-container" style="flex: 0 0 60%; overflow: auto;">
+    <h1>Tablero de Gráficas</h1>
     <div class="chart-container">
       <canvas id="myChart"></canvas>
     </div>
     <!-- Nuevo gráfico de pastel (chart2) -->
     <div class="chart-container">
       <canvas id="myPieChart"></canvas>
+    </div>
+    <div class="cont-total">
+      <h2>Total de Saldo por Banco</h2>
+      <table class="tabla-totales">
+        <thead>
+          <tr>
+            <th>Banco</th>
+            <th>Saldo Final</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(saldo, banco) in totalesPorBanco" :key="banco">
+            <td><strong>{{ banco }}</strong></td>
+            <td><strong>${{ Number(saldo).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </div>
 
@@ -75,41 +93,68 @@ import axios from "axios";
 import Chart from 'chart.js/auto';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-//import ExcelJS from 'exceljs'
 
 export default {
   data() {
     return {
       resultados: [],
+      selectedEstacion: null,
+      estaciones: {
+        1: 'OKTAN REMDU',
+        2: 'OKTAN SMART ENERGY',
+        3: 'OKTAN COLIBRI',
+        4: 'OKTAN CASCADA',
+        5: 'GASOLINERA EL MAYORAZGO',
+        6: 'GASOLINERA GRANJAS SAN ISIDRO',
+        7: 'GASOLINERA CASTILLOTLA',
+        8: 'OKTAN PERIFERICO SAN JOSE',
+        9: 'OKTAN EKO',
+        10: 'OKTAN MAGNUS',
+        11: 'OKTAN CLEAN ENERGY',
+        12: 'SERVI OKTAN',
+        13: 'SERVIOK',
+        14: 'GRUPO GASOLINERO EXITO',
+        15: 'SERVI K-FIVER',
+        16: 'SERVICIO GAS 5',
+        17: 'GASOLINERIA SAN FERNANDO',
+        18: 'OKTAN SERVITALLERES',
+        19: 'OKTAN SERVI PENINSULAR',
+        20: 'SERVIGAS-VANGUARD'
+      },
+      mostrarResultados: false,
       resultadosOriginales: [],
       fechaInicio: null,
       fechaFin: null,
       totalesPorBanco: {},
       myChart: null,
+      dbm: null,
     };
   },
   methods: {
     async filtrarDatos() {
-      if (this.fechaInicio && this.fechaFin) {
-        const url = "https://sistemas-oktan.com/admin/get.php/transaccionesbanco";
+      if (this.fechaInicio && this.fechaFin && this.dbm) {
+        const url = `http://gasserver.dyndns.org:8081/admin/get.php/transaccionesbanco`;
         const params = {
           fechaInicio: this.fechaInicio,
           fechaFin: this.fechaFin,
+          dbm: parseInt(this.dbm)
         };
 
         try {
           const response = await axios.get(url, { params });
-          this.resultadosOriginales = response.data.data;
-          this.resultados = [...this.resultadosOriginales];
+          this.resultadosOriginales = response.data.data; // Guardar los datos originales
+          this.resultados = [...this.resultadosOriginales]; // Actualizar resultados con los datos originales
           this.calcularUltimoSaldoPorBanco();
+          this.mostrarResultados = true; // Mostrar la tabla de resultados
         } catch (error) {
           console.error("Error al obtener datos de la API:", error);
         }
       } else {
-        this.resultados = [];
-        this.totalesPorBanco = {};
+        // Manejo si no se selecciona una estación o no se proporcionan fechas
+        
       }
     },
+
     calcularUltimoSaldoPorBanco() {
       this.totalesPorBanco = this.resultados.reduce((totales, adeudo) => {
         if (adeudo['banco'] && adeudo['saldo']) {
@@ -136,19 +181,42 @@ export default {
 
   // Definir una matriz de colores para las barras y el pastel
   const colores = [
-    'rgba(30, 117, 216, 0.4)',
-    'rgba(249, 58, 58, 0.8)',
-    'rgba(0, 47, 255, 0.4)',
-    // Agrega más colores aquí según sea necesario
+    'rgba(255, 100, 10, 0.4)',   // Naranja claro
+    'rgba(0, 207, 24, 0.4)',    // Verde claro
+    'rgba(255, 183, 0, 0.4)',   // Amarillo claro
+    'rgba(0, 0, 255, 0.4)',     // Azul
+    'rgba(255, 0, 0, 0.4)',     // Rojo
+    'rgba(255, 193, 7, 0.4)',   // Amarillo pastel
+    'rgba(29, 233, 182, 0.4)',  // Verde pastel
+    'rgba(255, 99, 132, 0.4)',  // Rosa pastel
+    'rgba(173, 216, 230, 0.4)', // Azul pastel
+    'rgba(222, 159, 64, 0.4)',  // Naranja pastel
+    'rgba(255, 205, 210, 0.4)', // Rosa claro
+    'rgba(144, 238, 144, 0.4)', // Verde claro
+    'rgba(173, 255, 47, 0.4)',  // Verde amarilloso
+    'rgba(176, 224, 230, 0.4)', // Azul cielo
+    'rgba(220, 208, 255, 0.4)', // Lavanda
+];
+
+  // Define una matriz de colores de resaltado para cada rebanada
+  const coloresResaltados = [
+    'rgba(255, 100, 10, 0.9)',   // Naranja claro
+    'rgba(0, 207, 24, 0.9)',    // Verde claro
+    'rgba(255, 183, 0, 0.9)',   // Amarillo claro
+    'rgba(0, 0, 255, 0.9)',     // Azul
+    'rgba(255, 0, 0, 0.9)',     // Rojo
+    'rgba(255, 193, 7, 0.9)',   // Amarillo pastel
+    'rgba(29, 233, 182, 0.9)',  // Verde pastel
+    'rgba(255, 99, 132, 0.9)',  // Rosa pastel
+    'rgba(173, 216, 230, 0.9)', // Azul pastel
+    'rgba(222, 159, 64, 0.9)',  // Naranja pastel
+    'rgba(255, 205, 210, 0.9)', // Rosa claro
+    'rgba(144, 238, 144, 0.9)', // Verde claro
+    'rgba(173, 255, 47, 0.9)',  // Verde amarilloso
+    'rgba(176, 224, 230, 0.9)', // Azul cielo
+    'rgba(220, 208, 255, 0.9)', // Lavanda
   ];
 
-  // Definir una matriz de colores resaltados
-  const coloresResaltados = [
-    'rgba(30, 117, 216, 0.5)', // Color oscurecido para la primera barra
-    'rgba(249, 58, 58, 0.9)', // Color oscurecido para la segunda barra
-    'rgba(0, 47, 255, 0.7)', // Color oscurecido para el pastel
-    // Agrega más colores resaltados aquí según sea necesario
-  ];
 
   // Gráfico de barras
   this.myChart = new Chart(ctx, {
@@ -215,9 +283,7 @@ export default {
     }
   });
 },
-
-
-    async downloadPDF() {
+async downloadPDF() {
   let doc = new jsPDF();
   let yOffset = 10;
 
@@ -314,8 +380,9 @@ export default {
   doc.save('Reporte_Transacciones_Bancos.pdf');
 }
 
-  },
 
+
+  },
 };
 </script>
 
@@ -327,11 +394,12 @@ export default {
 .content-container {
   display: flex;
   justify-content: space-between;
+  margin-top: 50px;
 }
 
 .chart-container {
   width: 95%;
-  height: 500px;
+  height: 800px;
   margin-left: 5px;
   margin-right: 10px;
 }
@@ -345,31 +413,38 @@ export default {
     font-size: 20px; /* Cambiar el tamaño de fuente */
   }
 
-table {
-  width: 90%;
+  table {
+  width: 95%;
   border-collapse: collapse;
   margin-top: 20px; /* Ajusta según sea necesario */
   margin-left: auto;
   margin-right: auto;
+  margin-bottom: 100px;
   transition: transform 0.5s ease, box-shadow 0.5s ease;
-  
 }
+
+/* Reducir el ancho de la primera columna a la mitad */
+table tr td:first-child {
+  width: 20%;
+}
+
 .table:hover {
   transform: translateY(-0.3rem);
   box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2);
 }
 .tabla-totales {
-  width: 850px; /* Cambia esto al ancho que desees */
+  width: 800px; /* Cambia esto al ancho que desees */
   height: auto; /* Cambia esto a la altura que desees */
   margin-left: auto;
-  margin-right: 70px;
+  margin-right: 200px;
   transition: transform 0.5s ease, box-shadow 0.5s ease;
   
   
 }
 .tabla-totales:hover {
-  transform: translateY(-1rem)scale(1.06);
-  box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.6);
+  transform: translateY(-1rem)scale(1.04);
+  transform: translateX(-3rem)scale(1.04);
+  box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.9);
 }
 
 .tabla-totales th,
@@ -379,10 +454,7 @@ table {
 }
 
 
-td:first-child {
-  /* Establece el ancho de la primera columna */
-  width: 300px;  /* Ajusta este valor según tus necesidades */
-}
+
 
 
 th,
@@ -462,5 +534,8 @@ th {
 .boton-filtrar:active {
   transform: scale(1.2); /* Aumentar un poco el tamaño al hacer clic */
 }
+.cont-total{
+  margin-top: 60px;
+  align-items: center;
+}
 </style>
-

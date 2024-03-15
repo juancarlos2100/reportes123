@@ -5,18 +5,26 @@
     </header>
     <h1>Reporte Operativo</h1>
     <h2> Saldos Proveedores</h2>
+    <div>
     <form @submit.prevent="filtrarDatos">
-      <label for="fechaInicio" style="font-size: 20px; font-weight: bold; padding-right: 10px;" >Fecha de Inicio:</label>
-      <input type="date" v-model="fechaInicio" style="margin-right:10px;">
+
+      <label for="estacion" style="font-size: 24px; font-weight: bold; padding-right: 10px; font-family: Arial, sans-serif;">Estación:</label>
+      <select id="estacion" v-model="dbm" style="width: 400px; height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;">
+        <option v-for="(nombre, id) in estaciones" :key="id" :value="id">{{ nombre }}</option>
+      </select>
+
+      <label for="fechaInicio" style="font-size: 24px; font-weight: bold; padding-right: 10px; font-family: Arial, sans-serif;" >Fecha de Inicio:</label>
+      <input type="date" v-model="fechaInicio" style="width: 150px; height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;">
       
-      <label for="fechaFin" style="font-size: 20px; font-weight: bold; padding-right: 10px;">Fecha de Fin:</label>
-      <input type="date" v-model="fechaFin" style="margin-right:10px;">
+      <label for="fechaFin" style="font-size: 24px; font-weight: bold; padding-right: 10px; font-family: Arial, sans-serif;">Fecha de Fin:</label>
+      <input type="date" v-model="fechaFin" style="width: 150px; height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;">
 
 
       <button class="boton-filtrar" type="submit">Filtrar</button>
     </form>
     <button class="boton-descargar" @click="downloadPDF">Descargar PDF</button>
     <button class="boton-descargar" @click="downloadPDF">Descargar XLS</button>
+    </div>
     
     <div class="container" style="display: flex; height: 100%;">
       <!-- Lado izquierdo -->
@@ -25,26 +33,29 @@
         <table class="table">
           <thead>
             <tr>
-              <!--<th>ID Proveedor</th>-->
-              <!--<th>Estatus</th>-->
-              <!--<th>Factura</th>-->
-              <th>Folio-Factura</th>
+              <th>id estacion</th>
+              <!--<th>Folio-Factura</th>-->
               <th>Saldo</th>
               <th>Fecha</th>
               <th>Nombre</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody v-if="mostrarResultados">
             <tr v-for="(adeudo, index) in resultados" :key="index">
-              <!--<td>{{ adeudo['id_proveedor'] }}</td>-->
-              <!--<td>{{ adeudo['estatus'] }}</td>-->
-              <!--<td>{{ adeudo['id_factura'] }}</td>-->
-              <td>{{ adeudo['folio'] }}</td>
+              <td>{{ adeudo['id_dbm'] }}</td>
+              <!--<td>{{ adeudo['folio'] }}</td>-->
               <td>${{ parseFloat(adeudo['saldo']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
               <td>{{ adeudo['fecha_creacion'] }}</td>
               <td>{{ adeudo['nombre'] }}</td>
             </tr>
           </tbody>
+          <tbody v-else>
+            <tr>
+              <td colspan="5">No se encontraron registros que coincidan con su búsqueda</td>
+            </tr>
+          </tbody>
+
+   
         </table>
         <br>
     
@@ -90,6 +101,7 @@ import Chart from 'chart.js/auto';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
+
 export default {
   data() {
     return {
@@ -99,16 +111,41 @@ export default {
       estatus: null,
       fechaInicio: null,
       fechaFin: null,
+      dbm: null, // Nuevo atributo para la estación
+      estaciones: {
+        1: 'OKTAN REMDU',
+        2: 'OKTAN SMART ENERGY',
+        3: 'OKTAN COLIBRI',
+        4: 'OKTAN CASCADA',
+        5: 'GASOLINERA EL MAYORAZGO',
+        6: 'GASOLINERA GRANJAS SAN ISIDRO',
+        7: 'GASOLINERA CASTILLOTLA',
+        8: 'OKTAN PERIFERICO SAN JOSE',
+        9: 'OKTAN EKO',
+        10: 'OKTAN MAGNUS',
+        11: 'OKTAN CLEAN ENERGY',
+        12: 'SERVI OKTAN',
+        13: 'SERVIOK',
+        14: 'GRUPO GASOLINERO EXITO',
+        15: 'SERVI K-FIVER',
+        16: 'SERVICIO GAS 5',
+        17: 'GASOLINERIA SAN FERNANDO',
+        18: 'OKTAN SERVITALLERES',
+        19: 'OKTAN SERVI PENINSULAR',
+        20: 'SERVIGAS-VANGUARD'
+      },
       totalesPorNombre: {},
+      mostrarResultados: false
     };
   },
   methods: {
     async filtrarDatos() {
-      if (this.fechaInicio && this.fechaFin) {
+      if (this.fechaInicio && this.fechaFin && this.dbm) {
         const url = "http://gasserver.dyndns.org:8081/admin/get.php/saldospipas";
         const params = {
           fechaInicio: this.fechaInicio,
           fechaFin: this.fechaFin,
+          dbm: parseInt(this.dbm)
         };
 
         try {
@@ -116,12 +153,14 @@ export default {
           this.resultadosOriginales = response.data.data;
           this.resultados = [...this.resultadosOriginales];
           this.calcularTotalesPorNombre();
+          this.mostrarResultados = true;
         } catch (error) {
           console.error("Error al obtener datos de la API:", error);
         }
       } else {
-        this.resultados = [...this.resultadosOriginales];
-        this.calcularTotalesPorNombre();
+        // Manejo si no se selecciona una estación o no se proporcionan fechas
+        this.resultados = [];
+        this.mostrarResultados = false;
       }
     },
     calcularTotalesPorNombre() {
@@ -143,6 +182,7 @@ export default {
       }
       this.generateChart();
     },
+
     generateChart() {
   const nombres = Object.keys(this.totalesPorNombre);
   const saldos = Object.values(this.totalesPorNombre).map(total => Math.abs(total.saldo));
@@ -272,7 +312,6 @@ export default {
     }
   });
 },
-
 async downloadPDF() {
   let doc = new jsPDF();
   let yOffset = 10;
@@ -335,7 +374,7 @@ async downloadPDF() {
 
 
 
- 
+
 
     // ...resto de métodos...
   },
