@@ -156,14 +156,34 @@ export default {
     },
 
     calcularUltimoSaldoPorBanco() {
+      const registrosUnicos = {};
       this.totalesPorBanco = this.resultados.reduce((totales, adeudo) => {
         if (adeudo['banco'] && adeudo['saldo']) {
-          totales[adeudo['banco']] = adeudo['saldo'];
+          // Verificar si ya existe un registro para este banco
+          if (!Object.prototype.hasOwnProperty.call(registrosUnicos, adeudo['banco'])) {
+            // Si no existe, añadir este registro como el último
+            totales[adeudo['banco']] = adeudo['saldo'];
+            registrosUnicos[adeudo['banco']] = adeudo;
+          } else {
+            // Si ya existe, comparar las fechas para determinar cuál es más reciente
+            const registroExistente = registrosUnicos[adeudo['banco']];
+            const fechaActual = new Date(adeudo['fecha']);
+            const fechaExistente = new Date(registroExistente['fecha']);
+
+            if (fechaActual > fechaExistente) {
+              // Si la fecha actual es más reciente, actualizar el registro
+              totales[adeudo['banco']] = adeudo['saldo'];
+              registrosUnicos[adeudo['banco']] = adeudo;
+            }
+          }
         }
         return totales;
       }, {});
       this.updateChart();
     },
+
+
+
     updateChart() {
       if (this.myChart) {
         this.myChart.destroy();
