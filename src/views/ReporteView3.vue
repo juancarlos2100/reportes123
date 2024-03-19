@@ -54,11 +54,8 @@
               <td colspan="5">No se encontraron registros que coincidan con su búsqueda</td>
             </tr>
           </tbody>
-
-   
         </table>
         <br>
-    
       </div>
 
       <!-- Lado derecho -->
@@ -91,15 +88,15 @@
         </table>
         </div>
       </div>
-      </div>
+    </div>
       </div>
 </template>
 
 <script>
 import axios from "axios";
-import Chart from 'chart.js/auto';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+//import Chart from 'chart.js/auto';
+//import jsPDF from 'jspdf';
+//import autoTable from 'jspdf-autotable';
 
 
 export default {
@@ -183,200 +180,7 @@ export default {
       this.generateChart();
     },
 
-    generateChart() {
-  const nombres = Object.keys(this.totalesPorNombre);
-  const saldos = Object.values(this.totalesPorNombre).map(total => Math.abs(total.saldo));
-  
-  const ctx = document.getElementById('myChart').getContext('2d');
 
-    // Define una matriz de colores para cada rebanada
-    const colores = [
-    'rgba(255, 100, 10, 0.4)',   // Naranja claro
-    'rgba(0, 207, 24, 0.4)',    // Verde claro
-    'rgba(255, 183, 0, 0.4)',   // Amarillo claro
-    'rgba(0, 0, 255, 0.4)',     // Azul
-    'rgba(255, 0, 0, 0.4)',     // Rojo
-    'rgba(255, 193, 7, 0.4)',   // Amarillo pastel
-    'rgba(29, 233, 182, 0.4)',  // Verde pastel
-    'rgba(255, 99, 132, 0.4)',  // Rosa pastel
-    'rgba(173, 216, 230, 0.4)', // Azul pastel
-    'rgba(222, 159, 64, 0.4)',  // Naranja pastel
-    'rgba(255, 205, 210, 0.4)', // Rosa claro
-    'rgba(144, 238, 144, 0.4)', // Verde claro
-    'rgba(173, 255, 47, 0.4)',  // Verde amarilloso
-    'rgba(176, 224, 230, 0.4)', // Azul cielo
-    'rgba(220, 208, 255, 0.4)', // Lavanda
-];
-
-  // Define una matriz de colores de resaltado para cada rebanada
-  const coloresResaltados = [
-    'rgba(255, 100, 10, 0.9)',   // Naranja claro
-    'rgba(0, 207, 24, 0.9)',    // Verde claro
-    'rgba(255, 183, 0, 0.9)',   // Amarillo claro
-    'rgba(0, 0, 255, 0.9)',     // Azul
-    'rgba(255, 0, 0, 0.9)',     // Rojo
-    'rgba(255, 193, 7, 0.9)',   // Amarillo pastel
-    'rgba(29, 233, 182, 0.9)',  // Verde pastel
-    'rgba(255, 99, 132, 0.9)',  // Rosa pastel
-    'rgba(173, 216, 230, 0.9)', // Azul pastel
-    'rgba(222, 159, 64, 0.9)',  // Naranja pastel
-    'rgba(255, 205, 210, 0.9)', // Rosa claro
-    'rgba(144, 238, 144, 0.9)', // Verde claro
-    'rgba(173, 255, 47, 0.9)',  // Verde amarilloso
-    'rgba(176, 224, 230, 0.9)', // Azul cielo
-    'rgba(220, 208, 255, 0.9)', // Lavanda
-  ];
-
-  // Gráfico de barras
-  let delayed;
-  this.myChart = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: nombres,
-      datasets: [{
-        label: `Periodo del  ${this.fechaInicio} al ${this.fechaFin}`,
-        data: saldos,
-        backgroundColor: colores,
-        borderColor: colores.map(color => color.replace('0.4', '1')), // Ajusta la opacidad para los bordes
-        borderWidth: 1,
-        hoverBackgroundColor: coloresResaltados,
-        hoverBorderWidth: 2
-      }]
-    },
-    options: {
-      indexAxis: 'y',
-      
-      scales: {
-      x: {
-        stacked: true,
-      },
-      y: {
-        stacked: true
-      }
-    },
-      animation: {
-      onComplete: () => {
-        delayed = true;
-      },
-      delay: (context) => {
-        let delay = 0;
-        if (context.type === 'data' && context.mode === 'default' && !delayed) {
-          delay = context.dataIndex * 400 + context.datasetIndex * 200;
-        }
-        return delay;
-      },
-      responsive: true,
-      plugins: {
-        title: {
-          display: true,
-          text: 'Pipas por Pagar'
-        }
-      },
-      animation: {
-        duration: 3000 // Ajusta la duración de la animación a 2000 milisegundos (2 segundos)
-      }
-    }
-  }
-  });
-
-  // Gráfico de pastel
-  const ctx2 = document.getElementById('myPieChart').getContext('2d');
-  this.myPieChart = new Chart(ctx2, {
-    type: 'doughnut',
-    data: {
-      labels: nombres,
-      datasets: [{
-        label: `Saldo por Nombre del ${this.fechaInicio} al ${this.fechaFin}`,
-        data: saldos,
-        backgroundColor: colores,
-        borderColor: colores.map(color => color.replace('0.4', '1')), // Ajusta la opacidad para los bordes
-        borderWidth: 1,
-        hoverBackgroundColor: coloresResaltados,
-        hoverBorderColor: coloresResaltados.map(color => color.replace('0.5', '1')), // Ajusta la opacidad para los bordes de resaltado
-        hoverBorderWidth: 2
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        title: {
-          display: true,
-          text: 'Preveedores de Combustible'
-        }
-      },
-      animation: {
-        duration: 3000 // Ajusta la duración de la animación a 2000 milisegundos (2 segundos)
-      }
-
-    }
-  });
-},
-async downloadPDF() {
-  let doc = new jsPDF();
-  let yOffset = 10;
-
-  // Encabezado del PDF
-  doc.text('Reporte Operativo', doc.internal.pageSize.getWidth() / 2, yOffset, { align: 'center', fontStyle: 'bold' });
-  doc.text('Saldos Proveedores', doc.internal.pageSize.getWidth() / 2, yOffset + 10, { align: 'center' });
-  doc.text('Pipas por pagar', doc.internal.pageSize.getWidth() / 2, yOffset + 20, { align: 'center' });
-  doc.text(`Del:  ${this.fechaInicio} al:  ${this.fechaFin}`, doc.internal.pageSize.getWidth() / 2, yOffset + 30, { align: 'center', fontSize: 12 });
-
-  // Generar tabla de saldos de proveedores
-  const tableData = [];
-  this.resultados.forEach(adeudo => {
-    const rowData = [
-      adeudo.folio,
-      `$${parseFloat(adeudo.saldo).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-      adeudo.fecha_creacion,
-      adeudo.nombre
-    ];
-    tableData.push(rowData);
-  });
-
-  // Agregar tabla de saldos de proveedores al PDF
-  autoTable(doc, {
-    head: [['Folio-Factura', 'Saldo', 'Fecha', 'Nombre']],
-    body: tableData,
-    startY: yOffset + 50,
-    headStyles: { fillColor: '#D3D3D3', textColor: '#000000' }
-  });
-
-  // Generar tabla de sumas totales por nombre
-  const totalTableData = [];
-  for (const [nombre, total] of Object.entries(this.totalesPorNombre)) {
-    totalTableData.push([total.factura.toFixed(2), `$${parseFloat(total.saldo).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, nombre]);
-  }
-
-  // Agregar tabla de sumas totales por nombre al PDF
-  autoTable(doc, {
-    head: [['Factura', 'Importe', 'Pipas por pagar']],
-    body: totalTableData,
-    startY: doc.lastAutoTable.finalY + 10,
-    headStyles: { fillColor: '#A2DA6A', textColor: '#000000' }
-  });
-
-  // Generar gráfico
-
-  
-
-  // Footer del PDF
-  const totalPages = doc.internal.getNumberOfPages();
-  for (let i = 1; i <= totalPages; i++) {
-    doc.setPage(i);
-    doc.setFontSize(10);
-    doc.text('Página ' + i + ' de ' + totalPages, doc.internal.pageSize.getWidth() - 80, doc.internal.pageSize.getHeight() - 10);
-  }
-
-  // Guardar el PDF
-  doc.save('Reporte_Saldos_Proveedores.pdf');
-}
-
-
-
-
-
-    // ...resto de métodos...
   },
 };
 </script>
