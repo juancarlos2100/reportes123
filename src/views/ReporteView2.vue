@@ -25,22 +25,30 @@
 
     <div class="container" style="display: flex; height: 100%;">
       <!-- Lado izquierdo -->
-      <div class="left-container" style="flex: 0 0 40%; overflow: auto;">
+      <div class="left-container" style="flex: 0 0 60%; overflow: auto;">
         <h1>Transacciones Registradas</h1>
         <table class="table">
           <thead>
             <tr>
               <th>id de estacion</th>
+              <th>id transaccion</th>
+              <th>id cuenta </th>
+              <th>id tipo</th>
               <th>Fecha Contable</th>
+              <th>Monto</th>
               <th>Saldo</th>
-              <!--<th>Status</th>-->
               <th>Banco</th>
+              
             </tr>
           </thead>
           <tbody v-if="mostrarResultados">
             <tr v-for="(adeudo, index) in resultados" :key="index">
               <td>{{ adeudo['id_dbm'] }}</td>
+              <td>{{ adeudo['id_transaccion'] }}</td>
+              <td>{{ adeudo['id_cuenta'] }}</td>
+              <td>{{ adeudo['id_tipo'] }}</td>
               <td>{{ adeudo['fecha_contable'] }}</td>
+              <td>${{ parseFloat(adeudo['monto']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
               <td>${{ parseFloat(adeudo['saldo']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
               <!--<td>{{ adeudo['estado'] }}</td>-->
               <td>{{ adeudo['banco'] }}</td>
@@ -56,7 +64,7 @@
       </div>
 
   <!-- Lado derecho -->
-  <div class="right-container" style="flex: 0 0 60%; overflow: auto;">
+  <div class="right-container" style="flex: 0 0 40%; overflow: auto;">
     <h1>Tablero de Gráficas</h1>
     <div class="chart-container">
       <canvas id="myChart"></canvas>
@@ -66,7 +74,7 @@
       <canvas id="myPieChart"></canvas>
     </div>
     <div class="cont-total">
-      <h2>Total de Saldo por Banco</h2>
+      <h2>Ultimas Transacciones del Periodo</h2>
       <table class="tabla-totales">
         <thead>
           <tr>
@@ -81,6 +89,27 @@
           </tr>
         </tbody>
       </table>
+      <br>
+      <h1>Total de Cargos y Abonos por Banco</h1>
+      <table class="tabla-totales">
+        <thead>
+          <tr>
+            <th>Banco</th>
+            <th>Cargos</th>
+            <th>Abonos</th>
+            <th> saldo</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Iterar sobre los totalesPorBanco2 y mostrar en filas -->
+          <tr v-for="(totales, banco) in totalesPorBanco2" :key="banco">
+            <td>{{ banco }}</td>
+            <td>${{ totales.cargos.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</td>
+            <td>${{ totales.abonos.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</td>
+            <td>${{ totales.saldo.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </div>
 
@@ -90,9 +119,9 @@
 
 <script>
 import axios from "axios";
-import Chart from 'chart.js/auto';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+//import Chart from 'chart.js/auto';
+//import jsPDF from 'jspdf';
+//import autoTable from 'jspdf-autotable';
 
 export default {
   data() {
@@ -128,6 +157,7 @@ export default {
       totalesPorBanco: {},
       myChart: null,
       dbm: null,
+      totalesPorBanco2: {},
     };
   },
   methods: {
@@ -146,6 +176,8 @@ export default {
           this.resultados = [...this.resultadosOriginales]; // Actualizar resultados con los datos originales
           this.calcularUltimoSaldoPorBanco();
           this.mostrarResultados = true; // Mostrar la tabla de resultados
+           // Calcular los totales por banco para la tabla2
+          this.calcularTotalesPorBanco();
         } catch (error) {
           console.error("Error al obtener datos de la API:", error);
         }
@@ -179,227 +211,41 @@ export default {
         }
         return totales;
       }, {});
-      this.updateChart();
+      //this.updateChart();
     },
+      
+    calcularTotalesPorBanco() {
+      const totalesPorBanco = {};
 
+      // Recorrer los resultados para calcular los totales por banco
+      this.resultados.forEach(adeudo => {
+        const banco = adeudo['banco'];
 
-
-    updateChart() {
-      if (this.myChart) {
-        this.myChart.destroy();
-        this.myPieChart.destroy(); // Destruye el gráfico de pastel también
-      }
-      this.generateChart();
-    },
-    generateChart() {
-  const bancos = Object.keys(this.totalesPorBanco);
-  const saldos = Object.values(this.totalesPorBanco);
-  const ctx = document.getElementById('myChart').getContext('2d');
-  
-  // Calcula los valores absolutos de los saldos
-  const saldosAbsolutos = saldos.map(saldo => Math.abs(saldo));
-
-  // Definir una matriz de colores para las barras y el pastel
-  const colores = [
-    'rgba(255, 100, 10, 0.4)',   // Naranja claro
-    'rgba(0, 207, 24, 0.4)',    // Verde claro
-    'rgba(255, 183, 0, 0.4)',   // Amarillo claro
-    'rgba(0, 0, 255, 0.4)',     // Azul
-    'rgba(255, 0, 0, 0.4)',     // Rojo
-    'rgba(255, 193, 7, 0.4)',   // Amarillo pastel
-    'rgba(29, 233, 182, 0.4)',  // Verde pastel
-    'rgba(255, 99, 132, 0.4)',  // Rosa pastel
-    'rgba(173, 216, 230, 0.4)', // Azul pastel
-    'rgba(222, 159, 64, 0.4)',  // Naranja pastel
-    'rgba(255, 205, 210, 0.4)', // Rosa claro
-    'rgba(144, 238, 144, 0.4)', // Verde claro
-    'rgba(173, 255, 47, 0.4)',  // Verde amarilloso
-    'rgba(176, 224, 230, 0.4)', // Azul cielo
-    'rgba(220, 208, 255, 0.4)', // Lavanda
-];
-
-  // Define una matriz de colores de resaltado para cada rebanada
-  const coloresResaltados = [
-    'rgba(255, 100, 10, 0.9)',   // Naranja claro
-    'rgba(0, 207, 24, 0.9)',    // Verde claro
-    'rgba(255, 183, 0, 0.9)',   // Amarillo claro
-    'rgba(0, 0, 255, 0.9)',     // Azul
-    'rgba(255, 0, 0, 0.9)',     // Rojo
-    'rgba(255, 193, 7, 0.9)',   // Amarillo pastel
-    'rgba(29, 233, 182, 0.9)',  // Verde pastel
-    'rgba(255, 99, 132, 0.9)',  // Rosa pastel
-    'rgba(173, 216, 230, 0.9)', // Azul pastel
-    'rgba(222, 159, 64, 0.9)',  // Naranja pastel
-    'rgba(255, 205, 210, 0.9)', // Rosa claro
-    'rgba(144, 238, 144, 0.9)', // Verde claro
-    'rgba(173, 255, 47, 0.9)',  // Verde amarilloso
-    'rgba(176, 224, 230, 0.9)', // Azul cielo
-    'rgba(220, 208, 255, 0.9)', // Lavanda
-  ];
-
-
-  // Gráfico de barras
-  this.myChart = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: bancos,
-      datasets: [{
-        label: `Saldo por Banco del ${this.fechaInicio} al ${this.fechaFin}`,
-        data: saldosAbsolutos,
-        backgroundColor: colores,
-        borderColor: colores.map(color => color.replace('0.4', '1')),
-        borderWidth: 1,
-        hoverBackgroundColor: coloresResaltados,
-        hoverBorderWidth: 2
-      }]
-    },
-    options: {
-      scales: {
-        y: {
-          beginAtZero: true
+        // Verificar si el banco ya existe en los totales
+        if (!totalesPorBanco[banco]) {
+          totalesPorBanco[banco] = {
+            cargos: 0,
+            abonos: 0,
+            saldo: 0
+          };
         }
-      },
-      plugins: {
-        title: {
-          display: true,
-          text: 'Saldo por Banco'
+
+        // Sumar el monto a los cargos o abonos según corresponda
+        if (parseFloat(adeudo['monto']) < 0) {
+          // Si el monto es negativo, es un cargo
+          totalesPorBanco[banco].cargos += Math.abs(parseFloat(adeudo['monto']));
+        } else {
+          // Si el monto es positivo, es un abono
+          totalesPorBanco[banco].abonos += parseFloat(adeudo['monto']);
         }
-      },
-      animation: {
-        duration: 3000 // Ajusta la duración de la animación a 2000 milisegundos (2 segundos)
-      }
+
+        // Sumar el saldo
+        totalesPorBanco[banco].saldo += parseFloat(adeudo['saldo']);
+      });
+
+      // Actualizar la tabla2 con los totales por banco
+      this.totalesPorBanco2 = totalesPorBanco;
     }
-  });
-
-  // Gráfico de pastel
-  const ctx2 = document.getElementById('myPieChart').getContext('2d');
-  this.myPieChart = new Chart(ctx2, {
-    type: 'pie',
-    data: {
-      labels: bancos,
-      datasets: [{
-        label: `Saldo por Banco del ${this.fechaInicio} al ${this.fechaFin}`,
-        data: saldosAbsolutos,
-        backgroundColor: colores,
-        borderColor: colores.map(color => color.replace('0.4', '1')),
-        borderWidth: 0.5,
-        hoverBackgroundColor: coloresResaltados,
-        hoverBorderColor: colores.map(color => color.replace('0.4', '1')),
-        hoverBorderWidth: 2
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        title: {
-          display: true,
-          text: 'Distribución de Saldos por Banco'
-        }
-      },
-      animation: {
-        duration: 3000 // Ajusta la duración de la animación a 2000 milisegundos (2 segundos)
-      }
-    }
-  });
-},
-async downloadPDF() {
-  let doc = new jsPDF();
-  let yOffset = 10;
-
-  // Encabezado del PDF
-  doc.text('Reporte Operativo', doc.internal.pageSize.getWidth() / 2, yOffset, { align: 'center', fontStyle: 'bolder' });
-  doc.text('Transacciones Bancos', doc.internal.pageSize.getWidth() / 2, yOffset + 10, { align: 'center' });
-  doc.text(`Del: ${this.fechaInicio} - al : ${this.fechaFin}`, doc.internal.pageSize.getWidth() / 2, yOffset + 20, { align: 'center', fontSize: 12 });
-
-  // Generar tabla de transacciones bancarias
-  const tableData = [];
-  this.resultados.forEach(adeudo => {
-    const rowData = [
-      adeudo.fecha_contable,
-      `$${parseFloat(adeudo.saldo).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-      adeudo.estado,
-      adeudo.banco
-    ];
-    tableData.push(rowData);
-  });
-
-  // Agregar tabla de transacciones bancarias al PDF
-  autoTable(doc, {
-    head: [['Fecha Contable', 'Saldo', 'Status', 'Banco']],
-    body: tableData,
-    startY: yOffset + 40,
-    headStyles: { fillColor: '#D3D3D3', textColor: '#000000' } 
-  });
-
-  // Generar tabla de totales por banco
-  const totalTableData = [];
-  for (const [banco, saldo] of Object.entries(this.totalesPorBanco)) {
-    totalTableData.push([banco, `$${Number(saldo).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`]);
-  }
-
-  // Agregar tabla de totales por banco al PDF
-  autoTable(doc, {
-    head: [['Banco', 'Saldo Final']],
-    body: totalTableData,
-    startY: doc.lastAutoTable.finalY + 10,
-    headStyles: { fillColor: '#A2DA6A', textColor: '#000000' } 
-  });
-
-  // Crear el gráfico solo si el canvas está presente en el DOM
-  const canvas = document.getElementById('myChart');
-  if (canvas) {
-    // Destruir el gráfico existente si existe
-    if (this.myChart) {
-      this.myChart.destroy();
-    }
-
-    // Generar el gráfico
-    const ctx = canvas.getContext('2d');
-    this.myChart = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: Object.keys(this.totalesPorBanco),
-        datasets: [{
-          label: `Saldo por Banco del ${this.fechaInicio} al ${this.fechaFin}`,
-          data: Object.values(this.totalesPorBanco),
-          backgroundColor: 'rgba(96, 150, 96, 0.2)',
-          borderColor: 'rgba(96, 150, 96, 1)',
-          borderWidth: 1
-        }]
-      },
-      options: {
-        scales: {
-          y: {
-            beginAtZero: true
-          }
-        }
-      }
-    });
-
-    // Exportar el gráfico como imagen
-    const chartImage = await this.myChart.toBase64Image();
-
-    // Agregar la imagen del gráfico al PDF
-    const imgProps = doc.getImageProperties(chartImage);
-    const aspectRatio = imgProps.width / imgProps.height;
-    const imgWidth = doc.internal.pageSize.getWidth() - 20;
-    const imgHeight = imgWidth / aspectRatio;
-    doc.addImage(chartImage, 'PNG', 10, doc.lastAutoTable.finalY + 20, imgWidth, imgHeight);
-  }
-
-  // Footer del PDF
-  const totalPages = doc.internal.getNumberOfPages();
-  for (let i = 1; i <= totalPages; i++) {
-    doc.setPage(i);
-    doc.setFontSize(10);
-    doc.text('Página ' + i + ' de ' + totalPages, doc.internal.pageSize.getWidth() - 80, doc.internal.pageSize.getHeight() - 10);
-  }
-
-  // Guardar el PDF
-  doc.save('Reporte_Transacciones_Bancos.pdf');
-}
-
 
 
   },
@@ -445,7 +291,7 @@ async downloadPDF() {
 
 /* Reducir el ancho de la primera columna a la mitad */
 table tr td:first-child {
-  width: 20%;
+  width: 100pxs;
 }
 
 .table:hover {
