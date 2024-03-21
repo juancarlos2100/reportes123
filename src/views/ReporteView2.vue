@@ -121,7 +121,7 @@
 
 <script>
 import axios from "axios";
-//import Chart from 'chart.js/auto';
+import Chart from 'chart.js/auto';
 //import jsPDF from 'jspdf';
 //import autoTable from 'jspdf-autotable';
 
@@ -192,6 +192,7 @@ export default {
           this.mostrarResultados = true; // Mostrar la tabla de resultados
            // Calcular los totales por banco para la tabla2
           this.calcularTotalesPorBanco();
+          this.generateChart
         } catch (error) {
           console.error("Error al obtener datos de la API:", error);
         }
@@ -268,6 +269,104 @@ export default {
 
 
   },
+  updateChart() {
+      if (this.myChart) {
+        this.myChart.destroy();
+        this.myPieChart.destroy(); // Destruye el gráfico de pastel también
+      }
+      this.generateChart();
+    },
+    generateChart() {
+  const bancos = Object.keys(this.totalesPorBanco);
+  const saldos = Object.values(this.totalesPorBanco);
+  const ctx = document.getElementById('myChart').getContext('2d');
+  
+  // Calcula los valores absolutos de los saldos
+  const saldosAbsolutos = saldos.map(saldo => Math.abs(saldo));
+
+  // Definir una matriz de colores para las barras y el pastel
+  const colores = [
+    'rgba(30, 117, 216, 0.4)',
+    'rgba(249, 58, 58, 0.8)',
+    'rgba(0, 47, 255, 0.4)',
+    // Agrega más colores aquí según sea necesario
+  ];
+
+  // Definir una matriz de colores resaltados
+  const coloresResaltados = [
+    'rgba(30, 117, 216, 0.5)', // Color oscurecido para la primera barra
+    'rgba(249, 58, 58, 0.9)', // Color oscurecido para la segunda barra
+    'rgba(0, 47, 255, 0.7)', // Color oscurecido para el pastel
+    // Agrega más colores resaltados aquí según sea necesario
+  ];
+
+  // Gráfico de barras
+  this.myChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: bancos,
+      datasets: [{
+        label: `Saldo por Banco del ${this.fechaInicio} al ${this.fechaFin}`,
+        data: saldosAbsolutos,
+        backgroundColor: colores,
+        borderColor: colores.map(color => color.replace('0.4', '1')),
+        borderWidth: 1,
+        hoverBackgroundColor: coloresResaltados,
+        hoverBorderWidth: 2
+      }]
+    },
+    options: {
+      scales: {
+        y: {
+          beginAtZero: true
+        }
+      },
+      plugins: {
+        title: {
+          display: true,
+          text: 'Saldo por Banco'
+        }
+      },
+      animation: {
+        duration: 3000 // Ajusta la duración de la animación a 2000 milisegundos (2 segundos)
+      }
+    }
+  });
+
+  // Gráfico de pastel
+  const ctx2 = document.getElementById('myPieChart').getContext('2d');
+  this.myPieChart = new Chart(ctx2, {
+    type: 'pie',
+    data: {
+      labels: bancos,
+      datasets: [{
+        label: `Saldo por Banco del ${this.fechaInicio} al ${this.fechaFin}`,
+        data: saldosAbsolutos,
+        backgroundColor: colores,
+        borderColor: colores.map(color => color.replace('0.4', '1')),
+        borderWidth: 0.5,
+        hoverBackgroundColor: coloresResaltados,
+        hoverBorderColor: colores.map(color => color.replace('0.4', '1')),
+        hoverBorderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        title: {
+          display: true,
+          text: 'Distribución de Saldos por Banco'
+        }
+      },
+      animation: {
+        duration: 3000 // Ajusta la duración de la animación a 2000 milisegundos (2 segundos)
+      }
+    }
+  });
+},
+
+  
 };
 </script>
 
