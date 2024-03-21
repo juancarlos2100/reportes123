@@ -170,7 +170,7 @@ export default {
         totales[nombre].factura += Number(adeudo['id_factura']); // Asume que 'id_factura' es el valor de la factura
         return totales;
       }, {});
-      this.updateChart();
+      //this.updateChart();
     },
     updateChart() {
       if (this.myChart) {

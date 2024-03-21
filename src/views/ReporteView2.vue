@@ -25,33 +25,33 @@
 
     <div class="container" style="display: flex; height: 100%;">
       <!-- Lado izquierdo -->
-      <div class="left-container" style="flex: 0 0 60%; overflow: auto;">
+      <div class="left-container" style="flex: 0 0 55%; overflow: auto;">
         <h1>Transacciones Registradas</h1>
         <table class="table">
           <thead>
             <tr>
+              <th>Banco</th>
               <th>id de estacion</th>
-              <th>id transaccion</th>
+              <!--<th>id transaccion</th>-->
               <th>id cuenta </th>
               <th>id tipo</th>
-              <th>Fecha Contable</th>
+              <!--<th>Fecha Contable</th>-->
               <th>Monto</th>
               <th>Saldo</th>
-              <th>Banco</th>
               
             </tr>
           </thead>
           <tbody v-if="mostrarResultados">
             <tr v-for="(adeudo, index) in resultados" :key="index">
+              <td>{{ adeudo['banco'] }}</td>
               <td>{{ adeudo['id_dbm'] }}</td>
-              <td>{{ adeudo['id_transaccion'] }}</td>
+              <!-- <td>{{ adeudo['id_transaccion'] }}</td>-->
               <td>{{ adeudo['id_cuenta'] }}</td>
               <td>{{ adeudo['id_tipo'] }}</td>
-              <td>{{ adeudo['fecha_contable'] }}</td>
+              <!--<td>{{ adeudo['fecha_contable'] }}</td>-->
               <td>${{ parseFloat(adeudo['monto']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
               <td>${{ parseFloat(adeudo['saldo']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
               <!--<td>{{ adeudo['estado'] }}</td>-->
-              <td>{{ adeudo['banco'] }}</td>
             </tr>
           </tbody>
           <tbody v-else>
@@ -64,7 +64,7 @@
       </div>
 
   <!-- Lado derecho -->
-  <div class="right-container" style="flex: 0 0 40%; overflow: auto;">
+  <div class="right-container" style="flex: 0 0 45%; overflow: auto;">
     <h1>Tablero de Gráficas</h1>
     <div class="chart-container">
       <canvas id="myChart"></canvas>
@@ -97,17 +97,19 @@
             <th>Banco</th>
             <th>Cargos</th>
             <th>Abonos</th>
-            <th> saldo</th>
+            <th>Saldo</th>
+            <th>Saldo Final</th>
           </tr>
         </thead>
         <tbody>
           <!-- Iterar sobre los totalesPorBanco2 y mostrar en filas -->
-          <tr v-for="(totales, banco) in totalesPorBanco2" :key="banco">
-            <td>{{ banco }}</td>
-            <td>${{ totales.cargos.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</td>
-            <td>${{ totales.abonos.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</td>
-            <td>${{ totales.saldo.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</td>
-          </tr>
+            <tr v-for="(totales, banco) in bancosFiltrados" :key="banco">
+          <td>{{ banco }}</td>
+          <td>${{ totales.cargos.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</td>
+          <td>${{ totales.abonos.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</td>
+          <td>${{ totales.saldo.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</td>
+          <td>${{ totales.saldoFinal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</td>
+            </tr>
         </tbody>
       </table>
     </div>
@@ -158,8 +160,20 @@ export default {
       myChart: null,
       dbm: null,
       totalesPorBanco2: {},
+      bancos: ['SANTANDER', 'BBVA', 'BANAMEX', 'BANCOMER', 'BAJIO', 'CAJA CHICA', 'INBURSA'],
     };
   },
+      computed: {
+        bancosFiltrados() {
+          const bancosFiltrados = {};
+          for (const banco in this.totalesPorBanco2) {
+            if (this.bancos.includes(banco)) {
+              bancosFiltrados[banco] = this.totalesPorBanco2[banco];
+            }
+          }
+          return bancosFiltrados;
+        }
+      },
   methods: {
     async filtrarDatos() {
       if (this.fechaInicio && this.fechaFin && this.dbm) {
@@ -215,37 +229,42 @@ export default {
     },
       
     calcularTotalesPorBanco() {
-      const totalesPorBanco = {};
+        const totalesPorBanco = {};
 
-      // Recorrer los resultados para calcular los totales por banco
-      this.resultados.forEach(adeudo => {
-        const banco = adeudo['banco'];
+        // Recorrer los resultados para calcular los totales por banco
+        this.resultados.forEach(adeudo => {
+          const banco = adeudo['banco'];
 
-        // Verificar si el banco ya existe en los totales
-        if (!totalesPorBanco[banco]) {
-          totalesPorBanco[banco] = {
-            cargos: 0,
-            abonos: 0,
-            saldo: 0
-          };
-        }
+          // Verificar si el banco ya existe en los totales
+          if (!totalesPorBanco[banco]) {
+            totalesPorBanco[banco] = {
+              cargos: 0,
+              abonos: 0,
+              saldo: 0,
+              saldoFinal: 0  // Agregamos el saldoFinal
+            };
+          }
 
-        // Sumar el monto a los cargos o abonos según corresponda
-        if (parseFloat(adeudo['monto']) < 0) {
-          // Si el monto es negativo, es un cargo
-          totalesPorBanco[banco].cargos += Math.abs(parseFloat(adeudo['monto']));
-        } else {
-          // Si el monto es positivo, es un abono
-          totalesPorBanco[banco].abonos += parseFloat(adeudo['monto']);
-        }
+          // Sumar el monto a los cargos o abonos según corresponda
+          if (parseFloat(adeudo['monto']) < 0) {
+            // Si el monto es negativo, es un cargo
+            totalesPorBanco[banco].cargos += Math.abs(parseFloat(adeudo['monto']));
+          } else {
+            // Si el monto es positivo, es un abono
+            totalesPorBanco[banco].abonos += parseFloat(adeudo['monto']);
+          }
 
-        // Sumar el saldo
-        totalesPorBanco[banco].saldo += parseFloat(adeudo['saldo']);
-      });
+          // Sumar el saldo
+          totalesPorBanco[banco].saldo += parseFloat(adeudo['saldo']);
 
-      // Actualizar la tabla2 con los totales por banco
-      this.totalesPorBanco2 = totalesPorBanco;
-    }
+          // Calcular el saldo final
+          totalesPorBanco[banco].saldoFinal = totalesPorBanco[banco].abonos + totalesPorBanco[banco].saldo;
+        });
+
+        // Actualizar la tabla2 con los totales por banco
+        this.totalesPorBanco2 = totalesPorBanco;
+      }
+
 
 
   },
@@ -302,15 +321,15 @@ table tr td:first-child {
   width: 800px; /* Cambia esto al ancho que desees */
   height: auto; /* Cambia esto a la altura que desees */
   margin-left: auto;
-  margin-right: 200px;
+  margin-right: 100px;
   transition: transform 0.5s ease, box-shadow 0.5s ease;
   
   
 }
 .tabla-totales:hover {
-  transform: translateY(-1rem)scale(1.04);
-  transform: translateX(-3rem)scale(1.04);
-  box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.9);
+  transform: translateY(-0.03rem)scale(1.01);
+  
+  box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.5);
 }
 
 .tabla-totales th,
