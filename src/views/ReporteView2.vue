@@ -35,7 +35,7 @@
               <!--<th>id transaccion</th>-->
               <th>id cuenta </th>
               <th>id tipo</th>
-              <!--<th>Fecha Contable</th>-->
+              <th>Fecha Contable</th>
               <th>Monto</th>
               <th>Saldo</th>
               
@@ -48,7 +48,7 @@
               <!-- <td>{{ adeudo['id_transaccion'] }}</td>-->
               <td>{{ adeudo['id_cuenta'] }}</td>
               <td>{{ adeudo['id_tipo'] }}</td>
-              <!--<td>{{ adeudo['fecha_contable'] }}</td>-->
+              <td>{{ adeudo['fecha_contable'] }}</td>
               <td>${{ parseFloat(adeudo['monto']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
               <td>${{ parseFloat(adeudo['saldo']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
               <!--<td>{{ adeudo['estado'] }}</td>-->
@@ -203,68 +203,58 @@ export default {
     },
 
     calcularUltimoSaldoPorBanco() {
-      const registrosUnicos = {};
-      this.totalesPorBanco = this.resultados.reduce((totales, adeudo) => {
-        if (adeudo['banco'] && adeudo['saldo']) {
-          // Verificar si ya existe un registro para este banco
-          if (!Object.prototype.hasOwnProperty.call(registrosUnicos, adeudo['banco'])) {
-            // Si no existe, añadir este registro como el último
-            totales[adeudo['banco']] = adeudo['saldo'];
-            registrosUnicos[adeudo['banco']] = adeudo;
-          } else {
-            // Si ya existe, comparar las fechas para determinar cuál es más reciente
-            const registroExistente = registrosUnicos[adeudo['banco']];
-            const fechaActual = new Date(adeudo['fecha']);
-            const fechaExistente = new Date(registroExistente['fecha']);
-
-            if (fechaActual > fechaExistente) {
-              // Si la fecha actual es más reciente, actualizar el registro
-              totales[adeudo['banco']] = adeudo['saldo'];
-              registrosUnicos[adeudo['banco']] = adeudo;
-            }
+        const registrosUnicos = {};
+        // Asumiendo que 'this.resultados' está ordenado cronológicamente
+        this.resultados.forEach((adeudo) => {
+          if (adeudo['banco'] && adeudo['saldo']) {
+            // El último adeudo de cada banco se sobrescribe en 'registrosUnicos'
+            registrosUnicos[adeudo['banco']] = adeudo['saldo'];
           }
-        }
-        return totales;
-      }, {});
-      //this.updateChart();
-    },
-      
-    calcularTotalesPorBanco() {
+        });
+        // 'this.totalesPorBanco' ahora contiene el último saldo de cada banco
+        this.totalesPorBanco = registrosUnicos;
+        //this.updateChart();
+      },
+
+
+      calcularTotalesPorBanco() {
         const totalesPorBanco = {};
 
         // Recorrer los resultados para calcular los totales por banco
         this.resultados.forEach(adeudo => {
-          const banco = adeudo['banco'];
+            const banco = adeudo['banco'];
+            const tipo = adeudo['id_tipo'];
+            const monto = parseFloat(adeudo['monto']);
 
-          // Verificar si el banco ya existe en los totales
-          if (!totalesPorBanco[banco]) {
-            totalesPorBanco[banco] = {
-              cargos: 0,
-              abonos: 0,
-              saldo: 0,
-              saldoFinal: 0  // Agregamos el saldoFinal
-            };
-          }
+            // Verificar si el banco ya existe en los totales
+            if (!totalesPorBanco[banco]) {
+                totalesPorBanco[banco] = {
+                    cargos: 0,
+                    abonos: 0,
+                    saldo: 0,
+                    saldoFinal: 0  // Agregamos el saldoFinal
+                };
+            }
 
-          // Sumar el monto a los cargos o abonos según corresponda
-          if (parseFloat(adeudo['monto']) < 0) {
-            // Si el monto es negativo, es un cargo
-            totalesPorBanco[banco].cargos += Math.abs(parseFloat(adeudo['monto']));
-          } else {
-            // Si el monto es positivo, es un abono
-            totalesPorBanco[banco].abonos += parseFloat(adeudo['monto']);
-          }
+            // Sumar el monto a los cargos o abonos según corresponda
+            if (tipo === '1') {
+                // Si el tipo es 1, es un cargo
+                totalesPorBanco[banco].cargos += monto;
+            } else if (tipo === '2') {
+                // Si el tipo es 2, es un abono
+                totalesPorBanco[banco].abonos += monto;
+            }
 
-          // Sumar el saldo
-          totalesPorBanco[banco].saldo += parseFloat(adeudo['saldo']);
+            // Sumar el saldo
+            totalesPorBanco[banco].saldo += parseFloat(adeudo['saldo']);
 
-          // Calcular el saldo final
-          totalesPorBanco[banco].saldoFinal = totalesPorBanco[banco].abonos + totalesPorBanco[banco].saldo;
+            // Calcular el saldo final
+            totalesPorBanco[banco].saldoFinal = totalesPorBanco[banco].saldo - totalesPorBanco[banco].cargos + totalesPorBanco[banco].abonos;
         });
 
         // Actualizar la tabla2 con los totales por banco
         this.totalesPorBanco2 = totalesPorBanco;
-      }
+    }
 
 
 
