@@ -11,6 +11,12 @@
         <select id="estacion" v-model="dbm" style="width: 400px; height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;">
           <option v-for="(nombre, id) in estaciones" :key="id" :value="id">{{ nombre }}</option>
         </select>
+        <label for="banco" style="font-size: 24px; font-weight: bold; padding-right: 10px; font-family: Arial, sans-serif;">Banco:</label>
+        <select id="banco" v-model="bancoSeleccionado" style="width: 400px; height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;">
+        <option value="">Todos</option>
+        <option v-for="banco in bancos" :key="banco" :value="banco">{{ banco }}</option>
+        </select>
+
 
         <label for="fechaInicio" style="font-size: 24px; font-weight: bold; padding-right: 10px; font-family: Arial, sans-serif;">Fecha de Inicio:</label>
         <input type="date" v-model="fechaInicio" maxlength="10" style="margin-right:10px; width: 150px;height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;">
@@ -121,9 +127,6 @@
 
 <script>
 import axios from "axios";
-import Chart from 'chart.js/auto';
-//import jsPDF from 'jspdf';
-//import autoTable from 'jspdf-autotable';
 
 export default {
   data() {
@@ -160,203 +163,90 @@ export default {
       myChart: null,
       dbm: null,
       totalesPorBanco2: {},
-      bancos: ['SANTANDER', 'BBVA', 'BANAMEX', 'BANCOMER', 'BAJIO', 'CAJA CHICA', 'INBURSA'],
+      bancoSeleccionado: null, 
+      bancos: ['SANTANDER', 'BAJIO', 'BANCOMER', 'BANAMEX'], 
     };
   },
-      computed: {
-        bancosFiltrados() {
-          const bancosFiltrados = {};
-          for (const banco in this.totalesPorBanco2) {
-            if (this.bancos.includes(banco)) {
-              bancosFiltrados[banco] = this.totalesPorBanco2[banco];
-            }
-          }
-          return bancosFiltrados;
+  computed: {
+    bancosFiltrados() {
+      const bancosFiltrados = {};
+      for (const banco in this.totalesPorBanco2) {
+        if (this.bancos.includes(banco)) {
+          bancosFiltrados[banco] = this.totalesPorBanco2[banco];
         }
-      },
+      }
+      return bancosFiltrados;
+    }
+  },
   methods: {
     async filtrarDatos() {
       if (this.fechaInicio && this.fechaFin && this.dbm) {
         const url = `http://gasserver.dyndns.org:8081/admin/get.php/transaccionesbanco`;
+        const fechaFinConHora = `${this.fechaFin}T12:00:00`;
+
         const params = {
           fechaInicio: this.fechaInicio,
-          fechaFin: this.fechaFin,
+          fechaFin: fechaFinConHora,
           dbm: parseInt(this.dbm)
         };
 
         try {
           const response = await axios.get(url, { params });
-          this.resultadosOriginales = response.data.data; // Guardar los datos originales
-          this.resultados = [...this.resultadosOriginales]; // Actualizar resultados con los datos originales
+          this.resultadosOriginales = response.data.data;
+          this.filtrarPorBanco();
           this.calcularUltimoSaldoPorBanco();
-          this.mostrarResultados = true; // Mostrar la tabla de resultados
-           // Calcular los totales por banco para la tabla2
           this.calcularTotalesPorBanco();
-          this.generateChart
+          this.mostrarResultados = true;
         } catch (error) {
           console.error("Error al obtener datos de la API:", error);
         }
       } else {
-        // Manejo si no se selecciona una estación o no se proporcionan fechas
-        
+        console.error("Por favor, selecciona una estación y proporciona las fechas de inicio y fin.");
       }
     },
-
+    filtrarPorBanco() {
+      if (this.bancoSeleccionado) {
+        this.resultados = this.resultadosOriginales.filter(adeudo => adeudo.banco === this.bancoSeleccionado);
+      } else {
+        this.resultados = [...this.resultadosOriginales];
+      }
+    },
     calcularUltimoSaldoPorBanco() {
-        const registrosUnicos = {};
-        // Asumiendo que 'this.resultados' está ordenado cronológicamente
-        this.resultados.forEach((adeudo) => {
-          if (adeudo['banco'] && adeudo['saldo']) {
-            // El último adeudo de cada banco se sobrescribe en 'registrosUnicos'
-            registrosUnicos[adeudo['banco']] = adeudo['saldo'];
-          }
-        });
-        // 'this.totalesPorBanco' ahora contiene el último saldo de cada banco
-        this.totalesPorBanco = registrosUnicos;
-        //this.updateChart();
-      },
-
-
-      calcularTotalesPorBanco() {
-        const totalesPorBanco = {};
-
-        // Recorrer los resultados para calcular los totales por banco
-        this.resultados.forEach(adeudo => {
-            const banco = adeudo['banco'];
-            const tipo = adeudo['id_tipo'];
-            const monto = parseFloat(adeudo['monto']);
-
-            // Verificar si el banco ya existe en los totales
-            if (!totalesPorBanco[banco]) {
-                totalesPorBanco[banco] = {
-                    cargos: 0,
-                    abonos: 0,
-                    saldo: 0,
-                    saldoFinal: 0  // Agregamos el saldoFinal
-                };
-            }
-
-            // Sumar el monto a los cargos o abonos según corresponda
-            if (tipo === '1') {
-                // Si el tipo es 1, es un cargo
-                totalesPorBanco[banco].cargos += monto;
-            } else if (tipo === '2') {
-                // Si el tipo es 2, es un abono
-                totalesPorBanco[banco].abonos += monto;
-            }
-
-            // Sumar el saldo
-            totalesPorBanco[banco].saldo += parseFloat(adeudo['saldo']);
-
-            // Calcular el saldo final
-            totalesPorBanco[banco].saldoFinal = totalesPorBanco[banco].saldo - totalesPorBanco[banco].cargos + totalesPorBanco[banco].abonos;
-        });
-
-        // Actualizar la tabla2 con los totales por banco
-        this.totalesPorBanco2 = totalesPorBanco;
-    }
-
-
-
-  },
-  updateChart() {
-      if (this.myChart) {
-        this.myChart.destroy();
-        this.myPieChart.destroy(); // Destruye el gráfico de pastel también
-      }
-      this.generateChart();
-    },
-    generateChart() {
-  const bancos = Object.keys(this.totalesPorBanco);
-  const saldos = Object.values(this.totalesPorBanco);
-  const ctx = document.getElementById('myChart').getContext('2d');
-  
-  // Calcula los valores absolutos de los saldos
-  const saldosAbsolutos = saldos.map(saldo => Math.abs(saldo));
-
-  // Definir una matriz de colores para las barras y el pastel
-  const colores = [
-    'rgba(30, 117, 216, 0.4)',
-    'rgba(249, 58, 58, 0.8)',
-    'rgba(0, 47, 255, 0.4)',
-    // Agrega más colores aquí según sea necesario
-  ];
-
-  // Definir una matriz de colores resaltados
-  const coloresResaltados = [
-    'rgba(30, 117, 216, 0.5)', // Color oscurecido para la primera barra
-    'rgba(249, 58, 58, 0.9)', // Color oscurecido para la segunda barra
-    'rgba(0, 47, 255, 0.7)', // Color oscurecido para el pastel
-    // Agrega más colores resaltados aquí según sea necesario
-  ];
-
-  // Gráfico de barras
-  this.myChart = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: bancos,
-      datasets: [{
-        label: `Saldo por Banco del ${this.fechaInicio} al ${this.fechaFin}`,
-        data: saldosAbsolutos,
-        backgroundColor: colores,
-        borderColor: colores.map(color => color.replace('0.4', '1')),
-        borderWidth: 1,
-        hoverBackgroundColor: coloresResaltados,
-        hoverBorderWidth: 2
-      }]
-    },
-    options: {
-      scales: {
-        y: {
-          beginAtZero: true
+      const registrosUnicos = {};
+      const resultadosFiltrados = this.bancoSeleccionado ? this.resultados.filter(adeudo => adeudo.banco === this.bancoSeleccionado) : this.resultados;
+      resultadosFiltrados.forEach(adeudo => {
+        if (adeudo.banco && adeudo.saldo) {
+          registrosUnicos[adeudo.banco] = adeudo.saldo;
         }
-      },
-      plugins: {
-        title: {
-          display: true,
-          text: 'Saldo por Banco'
-        }
-      },
-      animation: {
-        duration: 3000 // Ajusta la duración de la animación a 2000 milisegundos (2 segundos)
-      }
-    }
-  });
-
-  // Gráfico de pastel
-  const ctx2 = document.getElementById('myPieChart').getContext('2d');
-  this.myPieChart = new Chart(ctx2, {
-    type: 'pie',
-    data: {
-      labels: bancos,
-      datasets: [{
-        label: `Saldo por Banco del ${this.fechaInicio} al ${this.fechaFin}`,
-        data: saldosAbsolutos,
-        backgroundColor: colores,
-        borderColor: colores.map(color => color.replace('0.4', '1')),
-        borderWidth: 0.5,
-        hoverBackgroundColor: coloresResaltados,
-        hoverBorderColor: colores.map(color => color.replace('0.4', '1')),
-        hoverBorderWidth: 2
-      }]
+      });
+      this.totalesPorBanco = registrosUnicos;
     },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        title: {
-          display: true,
-          text: 'Distribución de Saldos por Banco'
+    calcularTotalesPorBanco() {
+      const totalesPorBanco = {};
+      this.resultados.forEach(adeudo => {
+        const banco = adeudo.banco;
+        const tipo = adeudo.id_tipo;
+        const monto = parseFloat(adeudo.monto);
+        if (!totalesPorBanco[banco]) {
+          totalesPorBanco[banco] = {
+            cargos: 0,
+            abonos: 0,
+            saldo: 0,
+            saldoFinal: 0  
+          };
         }
-      },
-      animation: {
-        duration: 3000 // Ajusta la duración de la animación a 2000 milisegundos (2 segundos)
-      }
+        if (tipo === '1') {
+          totalesPorBanco[banco].cargos += monto;
+        } else if (tipo === '2') {
+          totalesPorBanco[banco].abonos += monto;
+        }
+        totalesPorBanco[banco].saldo += parseFloat(adeudo.saldo);
+        totalesPorBanco[banco].saldoFinal = totalesPorBanco[banco].saldo - totalesPorBanco[banco].cargos + totalesPorBanco[banco].abonos;
+      });
+      this.totalesPorBanco2 = totalesPorBanco;
     }
-  });
-},
+  }
 
-  
 };
 </script>
 
