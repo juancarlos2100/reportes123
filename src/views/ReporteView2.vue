@@ -75,17 +75,13 @@
     <div class="chart-container">
       <canvas id="myChart"></canvas>
     </div>
-    <!-- Nuevo gráfico de pastel (chart2) -->
-    <div class="chart-container">
-      <canvas id="myPieChart"></canvas>
-    </div>
     <div class="cont-total">
-      <h2>Ultimas Transacciones del Periodo</h2>
+      <h2>Ultima Transaccione del Periodo</h2>
       <table class="tabla-totales">
         <thead>
           <tr>
             <th>Banco</th>
-            <th>Saldo Final</th>
+            <th>Saldo </th>
           </tr>
         </thead>
         <tbody>
@@ -103,7 +99,6 @@
             <th>Banco</th>
             <th>Cargos</th>
             <th>Abonos</th>
-            <th>Saldo</th>
             <th>Saldo Final</th>
           </tr>
         </thead>
@@ -113,8 +108,8 @@
           <td>{{ banco }}</td>
           <td>${{ totales.cargos.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</td>
           <td>${{ totales.abonos.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</td>
-          <td>${{ totales.saldo.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</td>
           <td>${{ totales.saldoFinal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</td>
+          <!--<td>${{ totales.saldo.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</td>-->
             </tr>
         </tbody>
       </table>
@@ -127,6 +122,8 @@
 
 <script>
 import axios from "axios";
+import Chart from 'chart.js/auto';
+
 
 export default {
   data() {
@@ -236,16 +233,61 @@ export default {
           };
         }
         if (tipo === '1') {
-          totalesPorBanco[banco].cargos += monto;
-        } else if (tipo === '2') {
           totalesPorBanco[banco].abonos += monto;
+        } else if (tipo === '2') {
+          totalesPorBanco[banco].cargos += monto;
         }
         totalesPorBanco[banco].saldo += parseFloat(adeudo.saldo);
-        totalesPorBanco[banco].saldoFinal = totalesPorBanco[banco].saldo - totalesPorBanco[banco].cargos + totalesPorBanco[banco].abonos;
+        totalesPorBanco[banco].saldoFinal = totalesPorBanco[banco].abonos - totalesPorBanco[banco].cargos; // Modificado aquí
       });
       this.totalesPorBanco2 = totalesPorBanco;
+      this.updateChart();
+    },
+
+    updateChart() {
+        if (this.myChart) {
+          this.myChart.destroy(); // Destruye el gráfico anterior
+        }
+        this.generateChart(); // Genera un nuevo gráfico
+      },
+
+    generateChart() {
+      const ctx = document.getElementById('myChart').getContext('2d');
+
+      // Define tus matrices de colores
+      const colores = ['rgba(255, 99, 132, 0.2)', 'rgba(54, 162, 235, 0.2)', 'rgba(255, 206, 86, 0.2)'];
+      const coloresResaltados = ['rgba(255, 99, 132, 1)', 'rgba(54, 162, 235, 1)', 'rgba(255, 206, 86, 1)'];
+
+      this.myChart = new Chart(ctx, {
+        type: 'polarArea',
+        data: {
+          labels: ['Cargos', 'Abonos', 'Saldo Final'],
+          datasets: [{
+            data: [this.totalesPorBanco2[this.bancoSeleccionado].cargos, this.totalesPorBanco2[this.bancoSeleccionado].abonos, this.totalesPorBanco2[this.bancoSeleccionado].saldoFinal],
+            backgroundColor: colores,
+            borderColor: coloresResaltados,
+            borderWidth: 1
+          }]
+        },
+        options: {
+          title: {
+            display: true,
+            text: this.bancoSeleccionado
+          }
+        },
+        animation: {
+          duration: 4500 // Duración de la animación en milisegundos
+        }
+      });
+    },
+
+    
+
+    
+
+    
+
     }
-  }
 
 };
 </script>

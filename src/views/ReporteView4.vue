@@ -12,11 +12,11 @@
           <option v-for="(nombre, id) in estaciones" :key="id" :value="id">{{ nombre }}</option>
         </select>
 
-        <label for="fechaInicio" style="font-size: 20px; font-weight: bold; padding-right: 10px;">Fecha de Inicio:</label>
-        <input type="date" v-model="fechaInicio" style="margin-right:10px;">
+        <label for="fechaInicio" style="font-size: 24px; font-weight: bold; padding-right: 10px; font-family: Arial, sans-serif;">Fecha de Inicio:</label>
+        <input type="date" v-model="fechaInicio" style="width: 400px; height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;">
         
-        <label for="fechaFin" style="font-size: 20px; font-weight: bold; padding-right: 10px;">Fecha de Fin:</label>
-        <input type="date" v-model="fechaFin" style="margin-right:10px;">
+        <label for="fechaFin" style="font-size: 24px; font-weight: bold; padding-right: 10px; font-family: Arial, sans-serif;">Fecha de Fin:</label>
+        <input type="date" v-model="fechaFin" style="width: 400px; height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;">
 
         <button class="boton-filtrar" type="submit">Filtrar</button>
       </form>
