@@ -37,9 +37,10 @@
           <thead>
             <tr>
               <th>Banco</th>
-              <th>id de estacion</th>
-              <!--<th>id transaccion</th>-->
-              <th>id cuenta </th>
+              <!--<th>id de estacion</th>
+              <th>id transaccion</th>
+              <th></th>-->
+              <th>Descripcion</th>
               <th>id tipo</th>
               <th>Fecha Contable</th>
               <th>Monto</th>
@@ -50,9 +51,10 @@
           <tbody v-if="mostrarResultados">
             <tr v-for="(adeudo, index) in resultados" :key="index">
               <td>{{ adeudo['banco'] }}</td>
-              <td>{{ adeudo['id_dbm'] }}</td>
-              <!-- <td>{{ adeudo['id_transaccion'] }}</td>-->
-              <td>{{ adeudo['id_cuenta'] }}</td>
+              <!--<td>{{ adeudo['id_dbm'] }}</td>
+              <td>{{ adeudo['id_transaccion'] }}</td>
+              <td>{{ adeudo['id_cuenta'] }}</td>-->
+              <td>{{ adeudo['descripcion'] }}</td>
               <td>{{ adeudo['id_tipo'] }}</td>
               <td>{{ adeudo['fecha_contable'] }}</td>
               <td>${{ parseFloat(adeudo['monto']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
@@ -76,12 +78,12 @@
       <canvas id="myChart"></canvas>
     </div>
     <div class="cont-total">
-      <h2>Ultima Transaccione del Periodo</h2>
+      <h2>Ultima Transaccion del Periodo</h2>
       <table class="tabla-totales">
         <thead>
           <tr>
             <th>Banco</th>
-            <th>Saldo </th>
+            <th>Saldo Final</th>
           </tr>
         </thead>
         <tbody>
@@ -99,7 +101,7 @@
             <th>Banco</th>
             <th>Cargos</th>
             <th>Abonos</th>
-            <th>Saldo Final</th>
+            <th>Diferencia</th>
           </tr>
         </thead>
         <tbody>
