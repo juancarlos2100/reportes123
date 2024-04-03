@@ -9,7 +9,7 @@
       <form @submit.prevent="filtrarDatos">
         <label for="estacion" style="font-size: 24px; font-weight: bold; padding-right: 10px; font-family: Arial, sans-serif;">Estación:</label>
         <select id="estacion" v-model="dbm" style="width: 400px; height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;">
-          <option v-for="(nombre, id) in estaciones" :key="id" :value="id">{{ nombre }}</option>
+        <option v-for="(nombre, id) in estaciones" :key="id" :value="id">{{ nombre }}</option>
         </select>
         <label for="banco" style="font-size: 24px; font-weight: bold; padding-right: 10px; font-family: Arial, sans-serif;">Banco:</label>
         <select id="banco" v-model="bancoSeleccionado" style="width: 400px; height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;">
@@ -54,8 +54,8 @@
               <!--<td>{{ adeudo['id_dbm'] }}</td>
               <td>{{ adeudo['id_transaccion'] }}</td>
               <td>{{ adeudo['id_cuenta'] }}</td>-->
-              <td>{{ adeudo['descripcion'] }}</td>
-              <td>{{ adeudo['id_tipo'] }}</td>
+              <td>{{ adeudo['descripcion'].length > 45 ? adeudo['descripcion'].slice(0, 45) + '...' : adeudo['descripcion'] }}</td>
+              <td><strong>{{ adeudo['id_tipo'] === '1' ? 'Cargo' : (adeudo['id_tipo'] === '2' ? 'Abono' : 'otro') }}</strong></td>
               <td>{{ adeudo['fecha_contable'] }}</td>
               <td>${{ parseFloat(adeudo['monto']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
               <td>${{ parseFloat(adeudo['saldo']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
@@ -99,8 +99,8 @@
         <thead>
           <tr>
             <th>Banco</th>
-            <th>Cargos</th>
             <th>Abonos</th>
+            <th>Cargos</th>
             <th>Diferencia</th>
           </tr>
         </thead>
@@ -132,28 +132,6 @@ export default {
     return {
       resultados: [],
       selectedEstacion: null,
-      estaciones: {
-        1: 'OKTAN REMDU',
-        2: 'OKTAN SMART ENERGY',
-        3: 'OKTAN COLIBRI',
-        4: 'OKTAN CASCADA',
-        5: 'GASOLINERA EL MAYORAZGO',
-        6: 'GASOLINERA GRANJAS SAN ISIDRO',
-        7: 'GASOLINERA CASTILLOTLA',
-        8: 'OKTAN PERIFERICO SAN JOSE',
-        9: 'OKTAN EKO',
-        10: 'OKTAN MAGNUS',
-        11: 'OKTAN CLEAN ENERGY',
-        12: 'SERVI OKTAN',
-        13: 'SERVIOK',
-        14: 'GRUPO GASOLINERO EXITO',
-        15: 'SERVI K-FIVER',
-        16: 'SERVICIO GAS 5',
-        17: 'GASOLINERIA SAN FERNANDO',
-        18: 'OKTAN SERVITALLERES',
-        19: 'OKTAN SERVI PENINSULAR',
-        20: 'SERVIGAS-VANGUARD'
-      },
       mostrarResultados: false,
       resultadosOriginales: [],
       fechaInicio: null,
@@ -163,7 +141,8 @@ export default {
       dbm: null,
       totalesPorBanco2: {},
       bancoSeleccionado: null, 
-      bancos: ['SANTANDER', 'BAJIO', 'BANCOMER', 'BANAMEX'], 
+      bancos: ['SANTANDER', 'BAJIO', 'BANCOMER', 'BANAMEX', 'GASTOS VIATICOS R', 'COMISIONES BANCARIAS', 'CAJA'], 
+      estaciones: {},
     };
   },
   computed: {
@@ -178,6 +157,23 @@ export default {
     }
   },
   methods: {
+    async cargarEstaciones() {
+      const url = 'http://gasserver.dyndns.org:8081/admin/get.php/estaciones';
+      try {
+        const response = await axios.get(url);
+        // Verificar si response.data es un array
+        if (Array.isArray(response.data.data)) {
+          this.estaciones = {};
+          for (const item of response.data.data) {
+            this.estaciones[item.id_dbm] = `${item.id_dbm} - ${item.nombre}`;
+          }
+        } else {
+          console.error("Los datos recibidos no son un array válido.");
+        }
+      } catch (error) {
+        console.error("Error al obtener las estaciones:", error);
+      }
+    },
     async filtrarDatos() {
       if (this.fechaInicio && this.fechaFin && this.dbm) {
         const url = `http://gasserver.dyndns.org:8081/admin/get.php/transaccionesbanco`;
@@ -289,7 +285,10 @@ export default {
 
     
 
-    }
+    },
+    mounted() {
+    this.cargarEstaciones();
+  }
 
 };
 </script>
