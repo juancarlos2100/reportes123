@@ -96,8 +96,8 @@
         <thead>
           <tr>
             <th>Banco</th>
-            <th>Abonos</th>
             <th>Cargos</th>
+            <th>Abonos</th>
             <th>Diferencia</th>
           </tr>
         </thead>
