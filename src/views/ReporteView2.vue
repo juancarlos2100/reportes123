@@ -1,28 +1,25 @@
 <template>
   <div class="container">
     <header>
-      <img class="imagen-encabezado" src="@/assets/logok.png" alt="Descripción de la imagen">
+      <img class="imagen-encabezado" src="@/assets/logok.png" alt="Logotipo de oktan">
     </header>
     <h1>Reporte Operativo</h1>
     <h2>Transacciones Bancos</h2>
     <div> 
       <form @submit.prevent="filtrarDatos">
         <label for="estacion" style="font-size: 24px; font-weight: bold; padding-right: 10px; font-family: Arial, sans-serif;">Estación:</label>
-        <select id="estacion" v-model="dbm" style="width: 400px; height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;">
-        <option v-for="(nombre, id) in estaciones" :key="id" :value="id">{{ nombre }}</option>
+        <select id="estacion" v-model="dbm" @change="cargarBancos" style="width: 400px; height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;">
+          <option v-for="(nombre, id) in estaciones" :key="id" :value="id">{{ nombre }}</option>
         </select>
         <label for="banco" style="font-size: 24px; font-weight: bold; padding-right: 10px; font-family: Arial, sans-serif;">Banco:</label>
         <select id="banco" v-model="bancoSeleccionado" style="width: 400px; height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;">
-        <option value="">Todos</option>
-        <option v-for="banco in bancos" :key="banco" :value="banco">{{ banco }}</option>
+          <option value="">Todos</option>
+          <option v-for="(nombre, id) in bancos" :key="id" :value="id">{{ nombre }}</option>
         </select>
-
-
         <label for="fechaInicio" style="font-size: 24px; font-weight: bold; padding-right: 10px; font-family: Arial, sans-serif;">Fecha de Inicio:</label>
         <input type="date" v-model="fechaInicio" maxlength="10" style="margin-right:10px; width: 150px;height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;">
         <label for="fechaFin" style="font-size: 24px; font-weight: bold; padding-right: 10px; font-family: Arial, sans-serif;">Fecha de Fin:</label>
         <input type="date" v-model="fechaFin" maxlength="10" style="margin-right:10px; width: 150px; height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;">
-
         <button class="boton-filtrar" type="submit">Filtrar</button>
       </form>
       <button class="boton-descargar" @click="downloadPDF">Descargar PDF</button>
@@ -89,7 +86,7 @@
         <tbody>
           <tr v-for="(saldo, banco) in totalesPorBanco" :key="banco">
             <td><strong>{{ banco }}</strong></td>
-            <td><strong>${{ Number(saldo).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
+            <td><strong>${{ Number(saldo.ultimoSaldo).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
           </tr>
         </tbody>
       </table>
@@ -105,14 +102,12 @@
           </tr>
         </thead>
         <tbody>
-          <!-- Iterar sobre los totalesPorBanco2 y mostrar en filas -->
-            <tr v-for="(totales, banco) in bancosFiltrados" :key="banco">
-          <td>{{ banco }}</td>
-          <td>${{ totales.cargos.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</td>
-          <td>${{ totales.abonos.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</td>
-          <td>${{ totales.saldoFinal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</td>
-          <!--<td>${{ totales.saldo.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</td>-->
-            </tr>
+          <tr v-for="(totales, banco) in totalesPorBanco" :key="banco">
+            <td>{{ banco }}</td>
+            <td>${{ totales.abonos.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</td>
+            <td>${{ totales.cargos.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</td>
+            <td>${{ totales.saldoFinal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</td>
+          </tr>
         </tbody>
       </table>
     </div>
@@ -124,8 +119,7 @@
 
 <script>
 import axios from "axios";
-import Chart from 'chart.js/auto';
-
+//import Chart from 'chart.js/auto';
 
 export default {
   data() {
@@ -141,37 +135,38 @@ export default {
       dbm: null,
       totalesPorBanco2: {},
       bancoSeleccionado: null, 
-      bancos: ['SANTANDER', 'BAJIO', 'BANCOMER', 'BANAMEX', 'GASTOS VIATICOS R', 'COMISIONES BANCARIAS', 'CAJA'], 
       estaciones: {},
+      bancos: {}, 
     };
   },
-  computed: {
-    bancosFiltrados() {
-      const bancosFiltrados = {};
-      for (const banco in this.totalesPorBanco2) {
-        if (this.bancos.includes(banco)) {
-          bancosFiltrados[banco] = this.totalesPorBanco2[banco];
-        }
-      }
-      return bancosFiltrados;
-    }
-  },
+
   methods: {
     async cargarEstaciones() {
       const url = 'http://gasserver.dyndns.org:8081/admin/get.php/estaciones';
       try {
         const response = await axios.get(url);
-        // Verificar si response.data es un array
-        if (Array.isArray(response.data.data)) {
-          this.estaciones = {};
-          for (const item of response.data.data) {
-            this.estaciones[item.id_dbm] = `${item.id_dbm} - ${item.nombre}`;
-          }
-        } else {
-          console.error("Los datos recibidos no son un array válido.");
-        }
+        this.estaciones = response.data.data.reduce((acc, item) => {
+          acc[item.id_dbm] = `${item.id_dbm} - ${item.nombre}`;
+          return acc;
+        }, {});
       } catch (error) {
         console.error("Error al obtener las estaciones:", error);
+      }
+    },
+    async cargarBancos() {
+      if (this.dbm) {
+        const url = `http://gasserver.dyndns.org:8081/admin/get.php/listabanco?dbm=${this.dbm}`;
+        try {
+          const response = await axios.get(url);
+          this.bancos = response.data.data.reduce((acc, item) => {
+            acc[item.id_cuenta] = item.banco;
+            return acc;
+          }, {});
+        } catch (error) {
+          console.error("Error al obtener los bancos:", error);
+        }
+      } else {
+        console.error("Por favor, selecciona una estación.");
       }
     },
     async filtrarDatos() {
@@ -189,7 +184,6 @@ export default {
           const response = await axios.get(url, { params });
           this.resultadosOriginales = response.data.data;
           this.filtrarPorBanco();
-          this.calcularUltimoSaldoPorBanco();
           this.calcularTotalesPorBanco();
           this.mostrarResultados = true;
         } catch (error) {
@@ -199,24 +193,14 @@ export default {
         console.error("Por favor, selecciona una estación y proporciona las fechas de inicio y fin.");
       }
     },
-    filtrarPorBanco() {
+      filtrarPorBanco() {
       if (this.bancoSeleccionado) {
-        this.resultados = this.resultadosOriginales.filter(adeudo => adeudo.banco === this.bancoSeleccionado);
+        this.resultados = this.resultadosOriginales.filter(adeudo => adeudo.id_cuenta === this.bancoSeleccionado);
       } else {
         this.resultados = [...this.resultadosOriginales];
       }
     },
-    calcularUltimoSaldoPorBanco() {
-      const registrosUnicos = {};
-      const resultadosFiltrados = this.bancoSeleccionado ? this.resultados.filter(adeudo => adeudo.banco === this.bancoSeleccionado) : this.resultados;
-      resultadosFiltrados.forEach(adeudo => {
-        if (adeudo.banco && adeudo.saldo) {
-          registrosUnicos[adeudo.banco] = adeudo.saldo;
-        }
-      });
-      this.totalesPorBanco = registrosUnicos;
-    },
-    calcularTotalesPorBanco() {
+      calcularTotalesPorBanco() {
       const totalesPorBanco = {};
       this.resultados.forEach(adeudo => {
         const banco = adeudo.banco;
@@ -236,60 +220,24 @@ export default {
           totalesPorBanco[banco].cargos += monto;
         }
         totalesPorBanco[banco].saldo += parseFloat(adeudo.saldo);
-        totalesPorBanco[banco].saldoFinal = totalesPorBanco[banco].abonos - totalesPorBanco[banco].cargos; // Modificado aquí
-      });
-      this.totalesPorBanco2 = totalesPorBanco;
-      this.updateChart();
-    },
-
-    updateChart() {
-        if (this.myChart) {
-          this.myChart.destroy(); // Destruye el gráfico anterior
-        }
-        this.generateChart(); // Genera un nuevo gráfico
-      },
-
-    generateChart() {
-      const ctx = document.getElementById('myChart').getContext('2d');
-
-      // Define tus matrices de colores
-      const colores = ['rgba(255, 99, 132, 0.2)', 'rgba(54, 162, 235, 0.2)', 'rgba(255, 206, 86, 0.2)'];
-      const coloresResaltados = ['rgba(255, 99, 132, 1)', 'rgba(54, 162, 235, 1)', 'rgba(255, 206, 86, 1)'];
-
-      this.myChart = new Chart(ctx, {
-        type: 'polarArea',
-        data: {
-          labels: ['Cargos', 'Abonos', 'Saldo Final'],
-          datasets: [{
-            data: [this.totalesPorBanco2[this.bancoSeleccionado].cargos, this.totalesPorBanco2[this.bancoSeleccionado].abonos, this.totalesPorBanco2[this.bancoSeleccionado].saldoFinal],
-            backgroundColor: colores,
-            borderColor: coloresResaltados,
-            borderWidth: 1
-          }]
-        },
-        options: {
-          title: {
-            display: true,
-            text: this.bancoSeleccionado
-          }
-        },
-        animation: {
-          duration: 4500 // Duración de la animación en milisegundos
+        totalesPorBanco[banco].saldoFinal = totalesPorBanco[banco].abonos - totalesPorBanco[banco].cargos;
+        // Agregar la lógica de calcularUltimoSaldoPorBanco aquí
+        if (adeudo.banco && adeudo.saldo) {
+          totalesPorBanco[adeudo.banco].ultimoSaldo = adeudo.saldo;
         }
       });
+      this.totalesPorBanco = totalesPorBanco;
+      //this.updateChart();
     },
 
-    
 
     
 
-    
-
-    },
-    mounted() {
+  
+  },
+  mounted() {
     this.cargarEstaciones();
   }
-
 };
 </script>
 
