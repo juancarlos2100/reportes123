@@ -34,9 +34,6 @@
           <thead>
             <tr>
               <th>Banco</th>
-              <!--<th>id de estacion</th>
-              <th>id transaccion</th>
-              <th></th>-->
               <th>Descripcion</th>
               <th>id tipo</th>
               <th>Fecha Contable</th>
@@ -48,15 +45,11 @@
           <tbody v-if="mostrarResultados">
             <tr v-for="(adeudo, index) in resultados" :key="index">
               <td>{{ adeudo['banco'] }}</td>
-              <!--<td>{{ adeudo['id_dbm'] }}</td>
-              <td>{{ adeudo['id_transaccion'] }}</td>
-              <td>{{ adeudo['id_cuenta'] }}</td>-->
               <td>{{ adeudo['descripcion'].length > 45 ? adeudo['descripcion'].slice(0, 45) + '...' : adeudo['descripcion'] }}</td>
               <td><strong>{{ adeudo['id_tipo'] === '1' ? 'Cargo' : (adeudo['id_tipo'] === '2' ? 'Abono' : 'otro') }}</strong></td>
               <td>{{ adeudo['fecha_contable'] }}</td>
               <td>${{ parseFloat(adeudo['monto']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
               <td>${{ parseFloat(adeudo['saldo']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
-              <!--<td>{{ adeudo['estado'] }}</td>-->
             </tr>
           </tbody>
           <tbody v-else>
@@ -75,7 +68,7 @@
       <canvas id="myChart"></canvas>
     </div>
     <div class="cont-total">
-      <h2>Ultima Transaccion del Periodo</h2>
+      <h1>Ultima Transaccion del Periodo</h1>
       <table class="tabla-totales">
         <thead>
           <tr>
@@ -119,7 +112,9 @@
 
 <script>
 import axios from "axios";
-//import Chart from 'chart.js/auto';
+import Chart from 'chart.js/auto';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 export default {
   data() {
@@ -220,18 +215,152 @@ export default {
           totalesPorBanco[banco].cargos += monto;
         }
         totalesPorBanco[banco].saldo += parseFloat(adeudo.saldo);
-        totalesPorBanco[banco].saldoFinal = totalesPorBanco[banco].abonos - totalesPorBanco[banco].cargos;
+        totalesPorBanco[banco].saldoFinal = Math.abs(totalesPorBanco[banco].abonos - totalesPorBanco[banco].cargos);
         // Agregar la lógica de calcularUltimoSaldoPorBanco aquí
         if (adeudo.banco && adeudo.saldo) {
           totalesPorBanco[adeudo.banco].ultimoSaldo = adeudo.saldo;
         }
       });
       this.totalesPorBanco = totalesPorBanco;
-      //this.updateChart();
+      this.updateChart();
     },
+    //fucncion para actualizar el grafico con cargos, abonos y diferencia
+    updateChart() {
+    const ctx = document.getElementById('myChart').getContext('2d');
+    if (this.myChart) {
+      this.myChart.destroy();
+  }
+
+  // Colores base para las barras
+  const baseColors = [
+    'rgba(54, 162, 235, 0.3)',
+    'rgba(255, 99, 132, 0.3)',
+    'rgba(75, 192, 192, 0.3)'
+  ];
+
+  // Colores intensos al pasar el cursor
+  const hoverColors = [
+    'rgba(54, 162, 235, 0.6)',
+    'rgba(255, 99, 132, 0.6)',
+    'rgba(75, 192, 192, 0.6)'
+  ];
+
+  this.myChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: '.',//Object.keys(this.totalesPorBanco),
+      datasets: [
+        {
+          label: 'Abonos',
+          data: Object.values(this.totalesPorBanco).map(totales => totales.cargos),
+          backgroundColor: baseColors[0],
+          hoverBackgroundColor: hoverColors[0],
+          borderColor: 'rgba(54, 162, 235, 1)',
+          borderWidth: 1
+        },
+        {
+          label: 'Cargos',
+          data: Object.values(this.totalesPorBanco).map(totales => totales.abonos),
+          backgroundColor: baseColors[1],
+          hoverBackgroundColor: hoverColors[1],
+          borderColor: 'rgba(255, 99, 132, 1)',
+          borderWidth: 1
+        },
+        {
+          label: 'Diferencia',
+          data: Object.values(this.totalesPorBanco).map(totales => totales.saldoFinal),
+          backgroundColor: baseColors[2],
+          hoverBackgroundColor: hoverColors[2],
+          borderColor: 'rgba(75, 192, 192, 1)',
+          borderWidth: 1
+        }
+      ]
+    },
+    options: {
+      scales: {
+        y: {
+          beginAtZero: true
+        }
+      }
+    }
+  });
+},
+async downloadPDF() {
+  let doc = new jsPDF();
+
+  // Título del reporte con periodo de fechas y banco seleccionado
+  const titulo = `Transacciones bancarias: Reporte Operativo\n(${this.fechaInicio} al ${this.fechaFin})`;
+  // Remove the unused variable declaration
+  // const titulo2 = `Del (${this.fechaInicio} al ${this.fechaFin})`;
+  doc.text(titulo, doc.internal.pageSize.getWidth() / 2, 10, { align: 'center', fontStyle: 'bold' });
+
+  // Encabezado de la tabla de transacciones registradas
+  const encabezado = "Transacciones Registradas";
+  doc.text(encabezado, 10, 30, { fontSize: 16 });
+
+  // Generar tabla de transacciones registradas
+  const transaccionesTableData = [];
+  this.resultados.forEach(adeudo => {
+    const rowData = [
+      adeudo.banco,
+      adeudo.descripcion.length > 45 ? adeudo.descripcion.slice(0, 45) + '...' : adeudo.descripcion,
+      adeudo.id_tipo === '1' ? 'Cargo' : (adeudo.id_tipo === '2' ? 'Abono' : 'otro'),
+      adeudo.fecha_contable,
+      `$${parseFloat(adeudo.monto).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+      `$${parseFloat(adeudo.saldo).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    ];
+    transaccionesTableData.push(rowData);
+  });
+
+  // Agregar tabla de transacciones registradas al PDF
+  autoTable(doc, {
+    head: [['Banco', 'Descripción', 'ID Tipo', 'Fecha Contable', 'Monto', 'Saldo']],
+    body: transaccionesTableData,
+    startY: 40,
+    headStyles: { fillColor: '#D3D3D3', textColor: '#000000' }
+  });
+
+  // Generar tabla de ultima transacción del periodo
+  const ultimaTransaccionTableData = [];
+  for (const [banco, saldo] of Object.entries(this.totalesPorBanco)) {
+    ultimaTransaccionTableData.push([banco, `$${Number(saldo.ultimoSaldo).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`]);
+  }
+
+  // Agregar tabla de ultima transacción del periodo al PDF
+  autoTable(doc, {
+    head: [['Banco', 'Saldo Final']],
+    body: ultimaTransaccionTableData,
+    startY: doc.lastAutoTable.finalY + 10,
+    headStyles: { fillColor: '#A2DA6A', textColor: '#000000' }
+  });
+
+  // Generar tabla de total de cargos y abonos por banco
+  const totalesTableData = [];
+  for (const [banco, totales] of Object.entries(this.totalesPorBanco)) {
+    totalesTableData.push([banco, `$${totales.cargos.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, `$${totales.abonos.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, `$${totales.saldoFinal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`]);
+  }
+
+  // Agregar tabla de total de cargos y abonos por banco al PDF
+  autoTable(doc, {
+    head: [['Banco', 'Cargos', 'Abonos', 'Diferencia']],
+    body: totalesTableData,
+    startY: doc.lastAutoTable.finalY + 10,
+    headStyles: { fillColor: '#A2DA6A', textColor: '#000000' }
+  });
+
+  // Footer del PDF
+  const totalPages = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
+    doc.setFontSize(10);
+    doc.text('Página ' + i + ' de ' + totalPages, doc.internal.pageSize.getWidth() - 80, doc.internal.pageSize.getHeight() - 10);
+  }
+
+  // Guardar el PDF
+  doc.save('Reporte_Transacciones_Bancarias.pdf');
+}
 
 
-    
 
   
   },
@@ -254,7 +383,7 @@ export default {
 
 .chart-container {
   width: 95%;
-  height: 800px;
+  height: 500px;
   margin-left: 5px;
   margin-right: 10px;
 }
