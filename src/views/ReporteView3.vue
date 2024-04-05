@@ -28,25 +28,27 @@
     
     <div class="container" style="display: flex; height: 100%;">
       <!-- Lado izquierdo -->
-      <div class="left-container" style="flex: 0 0 40%; overflow: auto;">
+      <div class="left-container" style="flex: 0 0 55%; overflow: auto;">
         <h1>Transacciones Registradas</h1>
         <table class="table">
           <thead>
             <tr>
-              <th>id estacion</th>
-              <!--<th>Folio-Factura</th>-->
-              <th>Saldo</th>
-              <th>Fecha</th>
+              <th>Folio-Factura</th>
               <th>Nombre</th>
+              <th>Fecha</th>
+              <th>Cargo</th>
+              <th>Abono</th>
+              <th>Saldo</th>
             </tr>
           </thead>
           <tbody v-if="mostrarResultados">
             <tr v-for="(adeudo, index) in resultados" :key="index">
-              <td>{{ adeudo['id_dbm'] }}</td>
-              <!--<td>{{ adeudo['folio'] }}</td>-->
-              <td>${{ parseFloat(adeudo['saldo']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
-              <td>{{ adeudo['fecha_creacion'] }}</td>
+              <td>{{ adeudo['folio'] }}</td>
               <td>{{ adeudo['nombre'] }}</td>
+              <td>{{ adeudo['fecha_creacion'] }}</td>
+              <td>${{ parseFloat(adeudo['cargo']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
+              <td>${{ parseFloat(adeudo['abono']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
+              <td>${{ parseFloat(adeudo['saldo']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
             </tr>
           </tbody>
           <tbody v-else>
@@ -59,33 +61,32 @@
       </div>
 
       <!-- Lado derecho -->
-      <div class="right-container" style="flex: 0 0 60%; overflow: auto;">
+      <div class="right-container" style="flex: 0 0 45%; overflow: auto;">
         <h1>Tablero de Gráficas</h1>
-        <div class="chart-container">
-          <canvas id="myChart"></canvas>
-        </div>
-        <!-- Nuevo gráfico de pastel (chart2) -->
         <div class="chart-container">
           <canvas id="myPieChart"></canvas>
         </div>
+        <!-- Nuevo gráfico de pastel (chart2) -->
         <div class="cont-total">
-        <h1>Total por Proveedor</h1>
-          <table class="tabla-totales">
-          <thead>
-            <tr>
-              <th>Factura</th>
-              <th>Importe</th>
-              <th>Pipas por pagar</th> <!-- Nueva columna -->
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(total, nombre) in totalesPorNombre" :key="nombre">
-              <td>{{ total.factura.toFixed(2) }}</td> <!-- Valor de la factura -->
-              <td><strong>${{ parseFloat(total.saldo).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
-              <td><strong>{{ nombre }}</strong></td>
-            </tr>
-          </tbody>
-        </table>
+          <h1>Total por Proveedor</h1>
+            <table class="tabla-totales">
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Cargos</th>
+                  <th>Abonos</th>
+                  <th>Diferencia</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(total, nombre) in totalesPorNombre" :key="nombre">
+                  <td><strong>{{ nombre }}</strong></td>
+                  <td>${{ total.cargos.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</td>
+                  <td>${{ total.abonos.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</td>
+                  <td>${{ total.diferencia.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</td>
+                </tr>
+              </tbody>
+            </table>
         </div>
       </div>
     </div>
@@ -109,33 +110,24 @@ export default {
       fechaInicio: null,
       fechaFin: null,
       dbm: null, // Nuevo atributo para la estación
-      estaciones: {
-        1: 'OKTAN REMDU',
-        2: 'OKTAN SMART ENERGY',
-        3: 'OKTAN COLIBRI',
-        4: 'OKTAN CASCADA',
-        5: 'GASOLINERA EL MAYORAZGO',
-        6: 'GASOLINERA GRANJAS SAN ISIDRO',
-        7: 'GASOLINERA CASTILLOTLA',
-        8: 'OKTAN PERIFERICO SAN JOSE',
-        9: 'OKTAN EKO',
-        10: 'OKTAN MAGNUS',
-        11: 'OKTAN CLEAN ENERGY',
-        12: 'SERVI OKTAN',
-        13: 'SERVIOK',
-        14: 'GRUPO GASOLINERO EXITO',
-        15: 'SERVI K-FIVER',
-        16: 'SERVICIO GAS 5',
-        17: 'GASOLINERIA SAN FERNANDO',
-        18: 'OKTAN SERVITALLERES',
-        19: 'OKTAN SERVI PENINSULAR',
-        20: 'SERVIGAS-VANGUARD'
-      },
+      estaciones: {},
       totalesPorNombre: {},
       mostrarResultados: false
     };
   },
   methods: {
+    async cargarEstaciones() {
+      const url = 'http://gasserver.dyndns.org:8081/admin/get.php/estaciones';
+      try {
+        const response = await axios.get(url);
+        this.estaciones = response.data.data.reduce((acc, item) => {
+          acc[item.id_dbm] = `${item.id_dbm} - ${item.nombre}`;
+          return acc;
+        }, {});
+      } catch (error) {
+        console.error("Error al obtener las estaciones:", error);
+      }
+    },
     async filtrarDatos() {
       if (this.fechaInicio && this.fechaFin && this.dbm) {
         const url = "http://gasserver.dyndns.org:8081/admin/get.php/saldospipas";
@@ -161,221 +153,158 @@ export default {
       }
     },
     calcularTotalesPorNombre() {
-      this.totalesPorNombre = this.resultados.reduce((totales, adeudo) => {
-        const nombre = adeudo['nombre'];
-        if (!totales[nombre]) {
-          totales[nombre] = { saldo: 0, factura: 0 };
-        }
-        totales[nombre].saldo += Number(adeudo['saldo']);
-        totales[nombre].factura += Number(adeudo['id_factura']); // Asume que 'id_factura' es el valor de la factura
-        return totales;
-      }, {});
-      this.updateChart();
-    },
+    this.totalesPorNombre = this.resultados.reduce((totales, adeudo) => {
+      const nombre = adeudo['nombre'];
+      if (!totales[nombre]) {
+        totales[nombre] = { cargos: 0, abonos: 0, diferencia: 0, saldo: 0 };
+      }
+      totales[nombre].cargos += Math.abs(Number(adeudo['cargo']));
+      totales[nombre].abonos += Number(adeudo['abono']);
+      totales[nombre].saldo += Number(adeudo['saldo']);
+      totales[nombre].diferencia = Math.abs(totales[nombre].abonos - totales[nombre].cargos);
+      return totales;
+    }, {});
+    this.updateChart();
+  },
     updateChart() {
-      if (this.myChart) {
-        this.myChart.destroy();
-        this.myPieChart.destroy(); // Destruye el gráfico de pastel también
+      const ctx = document.getElementById('myPieChart').getContext('2d');
+
+      if (this.myPieChart) {
+          this.myPieChart.destroy();
       }
-      this.generateChart();
+
+      // Colores base para las barras
+      const baseColors = [
+          'rgba(54, 162, 235, 0.3)',
+          'rgba(255, 99, 132, 0.3)',
+          'rgba(75, 192, 192, 0.3)'
+      ];
+
+      // Colores intensos al pasar el cursor
+      const hoverColors = [
+          'rgba(54, 162, 235, 0.6)',
+          'rgba(255, 99, 132, 0.6)',
+          'rgba(75, 192, 192, 0.6)'
+      ];
+
+      const nombres = Object.keys(this.totalesPorNombre);
+      const cargos = nombres.map(nombre => this.totalesPorNombre[nombre].cargos);
+      const abonos = nombres.map(nombre => this.totalesPorNombre[nombre].abonos);
+      const diferencia = nombres.map(nombre => this.totalesPorNombre[nombre].diferencia);
+
+      this.myPieChart = new Chart(ctx, {
+          type: 'bar',
+          data: {
+              labels: nombres,
+              datasets: [{
+                      label: 'Cargos',
+                      data: cargos,
+                      backgroundColor: baseColors[0],
+                      hoverBackgroundColor: hoverColors[0],
+                      borderColor: 'rgba(54, 162, 235, 1)',
+                      borderWidth: 1
+                  },
+                  {
+                      label: 'Abonos',
+                      data: abonos,
+                      backgroundColor: baseColors[1],
+                      hoverBackgroundColor: hoverColors[1],
+                      borderColor: 'rgba(255, 99, 132, 1)',
+                      borderWidth: 1
+                  },
+                  {
+                      label: 'Diferencia',
+                      data: diferencia,
+                      backgroundColor: baseColors[2],
+                      hoverBackgroundColor: hoverColors[2],
+                      borderColor: 'rgba(75, 192, 192, 1)',
+                      borderWidth: 1
+                  }
+              ]
+          },
+          options: {
+              scales: {
+                  y: {
+                      beginAtZero: true
+                  }
+              }
+          }
+      });
     },
+    async downloadPDF() {
+    let doc = new jsPDF();
     
-  generateChart() {
-  const nombres = Object.keys(this.totalesPorNombre);
-  const saldos = Object.values(this.totalesPorNombre).map(total => Math.abs(total.saldo));
-  
-  const ctx = document.getElementById('myChart').getContext('2d');
+    // Título del reporte con periodo de fechas
+    const titulo = `Saldos Proveedores - Estación: ${this.estaciones[this.dbm]}  \n Del (${this.fechaInicio} al ${this.fechaFin})`;
+    doc.text(titulo, doc.internal.pageSize.getWidth() / 2, 10, { align: 'center', fontStyle: 'bold' });
 
-    // Define una matriz de colores para cada rebanada
-    const colores = [
-    'rgba(255, 100, 10, 0.4)',   // Naranja claro
-    'rgba(0, 207, 24, 0.4)',    // Verde claro
-    'rgba(255, 183, 0, 0.4)',   // Amarillo claro
-    'rgba(0, 0, 255, 0.4)',     // Azul
-    'rgba(255, 0, 0, 0.4)',     // Rojo
-    'rgba(255, 193, 7, 0.4)',   // Amarillo pastel
-    'rgba(29, 233, 182, 0.4)',  // Verde pastel
-    'rgba(255, 99, 132, 0.4)',  // Rosa pastel
-    'rgba(173, 216, 230, 0.4)', // Azul pastel
-    'rgba(222, 159, 64, 0.4)',  // Naranja pastel
-    'rgba(255, 205, 210, 0.4)', // Rosa claro
-    'rgba(144, 238, 144, 0.4)', // Verde claro
-    'rgba(173, 255, 47, 0.4)',  // Verde amarilloso
-    'rgba(176, 224, 230, 0.4)', // Azul cielo
-    'rgba(220, 208, 255, 0.4)', // Lavanda
-];
 
-  // Define una matriz de colores de resaltado para cada rebanada
-  const coloresResaltados = [
-    'rgba(255, 100, 10, 0.9)',   // Naranja claro
-    'rgba(0, 207, 24, 0.9)',    // Verde claro
-    'rgba(255, 183, 0, 0.9)',   // Amarillo claro
-    'rgba(0, 0, 255, 0.9)',     // Azul
-    'rgba(255, 0, 0, 0.9)',     // Rojo
-    'rgba(255, 193, 7, 0.9)',   // Amarillo pastel
-    'rgba(29, 233, 182, 0.9)',  // Verde pastel
-    'rgba(255, 99, 132, 0.9)',  // Rosa pastel
-    'rgba(173, 216, 230, 0.9)', // Azul pastel
-    'rgba(222, 159, 64, 0.9)',  // Naranja pastel
-    'rgba(255, 205, 210, 0.9)', // Rosa claro
-    'rgba(144, 238, 144, 0.9)', // Verde claro
-    'rgba(173, 255, 47, 0.9)',  // Verde amarilloso
-    'rgba(176, 224, 230, 0.9)', // Azul cielo
-    'rgba(220, 208, 255, 0.9)', // Lavanda
-  ];
-
-  // Gráfico de barras
-  let delayed;
-  this.myChart = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: nombres,
-      datasets: [{
-        label: `Periodo del  ${this.fechaInicio} al ${this.fechaFin}`,
-        data: saldos,
-        backgroundColor: colores,
-        borderColor: colores.map(color => color.replace('0.4', '1')), // Ajusta la opacidad para los bordes
-        borderWidth: 1,
-        hoverBackgroundColor: coloresResaltados,
-        hoverBorderWidth: 2
-      }]
-    },
-    options: {
-      indexAxis: 'y',
-      
-      scales: {
-      x: {
-        stacked: true,
-      },
-      y: {
-        stacked: true
-      }
-    },
-      animation: {
-      onComplete: () => {
-        delayed = true;
-      },
-      delay: (context) => {
-        let delay = 0;
-        if (context.type === 'data' && context.mode === 'default' && !delayed) {
-          delay = context.dataIndex * 400 + context.datasetIndex * 200;
-        }
-        return delay;
-      },
-      responsive: true,
-      plugins: {
-        title: {
-          display: true,
-          text: 'Pipas por Pagar'
-        }
-      },
-      animation: {
-        duration: 3000 // Ajusta la duración de la animación a 2000 milisegundos (2 segundos)
-      }
+    // Tabla de Transacciones Registradas
+    const transaccionesTableData = [];
+    for (const adeudo of this.resultados) {
+      const rowData = [
+        adeudo.folio,
+        adeudo.nombre,
+        adeudo.fecha_creacion,
+        `$${parseFloat(adeudo.cargo).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`,
+        `$${parseFloat(adeudo.abono).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`,
+        `$${parseFloat(adeudo.saldo).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`
+      ];
+      transaccionesTableData.push(rowData);
     }
-  }
-  });
 
-  // Gráfico de pastel
-  const ctx2 = document.getElementById('myPieChart').getContext('2d');
-  this.myPieChart = new Chart(ctx2, {
-    type: 'doughnut',
-    data: {
-      labels: nombres,
-      datasets: [{
-        label: `Saldo por Nombre del ${this.fechaInicio} al ${this.fechaFin}`,
-        data: saldos,
-        backgroundColor: colores,
-        borderColor: colores.map(color => color.replace('0.4', '1')), // Ajusta la opacidad para los bordes
-        borderWidth: 1,
-        hoverBackgroundColor: coloresResaltados,
-        hoverBorderColor: coloresResaltados.map(color => color.replace('0.5', '1')), // Ajusta la opacidad para los bordes de resaltado
-        hoverBorderWidth: 2
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        title: {
-          display: true,
-          text: 'Preveedores de Combustible'
-        }
-      },
-      animation: {
-        duration: 3000 // Ajusta la duración de la animación a 2000 milisegundos (2 segundos)
-      }
+    // Agregar tabla de Transacciones Registradas al PDF
+    autoTable(doc, {
+      head: [['Folio-Factura', 'Nombre', 'Fecha', 'Cargo', 'Abono', 'Saldo']],
+      body: transaccionesTableData,
+      startY: 20,
+      headStyles: { fillColor: '#D3D3D3', textColor: '#000000' }
+    });
 
+    // Tabla de Total por Proveedor
+    const totalesTableData = [];
+    for (const [nombre, total] of Object.entries(this.totalesPorNombre)) {
+      totalesTableData.push([nombre, `$${total.cargos.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, `$${total.abonos.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, `$${total.diferencia.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`]);
     }
-  });
-},
-async downloadPDF() {
-  let doc = new jsPDF();
-  let yOffset = 10;
 
-  // Encabezado del PDF
-  doc.text('Reporte Operativo', doc.internal.pageSize.getWidth() / 2, yOffset, { align: 'center', fontStyle: 'bold' });
-  doc.text('Saldos Proveedores', doc.internal.pageSize.getWidth() / 2, yOffset + 10, { align: 'center' });
-  doc.text('Pipas por pagar', doc.internal.pageSize.getWidth() / 2, yOffset + 20, { align: 'center' });
-  doc.text(`Del:  ${this.fechaInicio} al:  ${this.fechaFin}`, doc.internal.pageSize.getWidth() / 2, yOffset + 30, { align: 'center', fontSize: 12 });
+    // Agregar tabla de Total por Proveedor al PDF
+    autoTable(doc, {
+      head: [['Nombre', 'Cargos', 'Abonos', 'Diferencia']],
+      body: totalesTableData,
+      startY: doc.lastAutoTable.finalY + 20, // Aumentar el espacio entre las tablas
+      headStyles: { fillColor: '#D3D3D3', textColor: '#000000' }
+    });
 
-  // Generar tabla de saldos de proveedores
-  const tableData = [];
-  this.resultados.forEach(adeudo => {
-    const rowData = [
-      adeudo.folio,
-      `$${parseFloat(adeudo.saldo).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-      adeudo.fecha_creacion,
-      adeudo.nombre
-    ];
-    tableData.push(rowData);
-  });
+    // Footer del PDF
+    const totalPages = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+      doc.setPage(i);
+      doc.setFontSize(10);
+      doc.text('Página ' + i + ' de ' + totalPages, doc.internal.pageSize.getWidth() - 80, doc.internal.pageSize.getHeight() - 2);
+    }
 
-  // Agregar tabla de saldos de proveedores al PDF
-  autoTable(doc, {
-    head: [['Folio-Factura', 'Saldo', 'Fecha', 'Nombre']],
-    body: tableData,
-    startY: yOffset + 50,
-    headStyles: { fillColor: '#D3D3D3', textColor: '#000000' }
-  });
+    // Agregar el gráfico al final del PDF
+    const canvas = document.getElementById('myPieChart');
+    const imageData = canvas.toDataURL('image/png');
+    const imgWidth = 110; // Ancho deseado para la imagen
+    const imgHeight = 60; // Altura deseada para la imagen
+    const positionX = doc.internal.pageSize.getWidth() - imgWidth - 10; // Alineado a la derecha con un pequeño margen
+    const positionY = doc.internal.pageSize.getHeight() - imgHeight - 10; // Posición vertical desde la parte inferior del PDF
+    doc.addImage(imageData, 'PNG', positionX, positionY, imgWidth, imgHeight);
 
-  // Generar tabla de sumas totales por nombre
-  const totalTableData = [];
-  for (const [nombre, total] of Object.entries(this.totalesPorNombre)) {
-    totalTableData.push([total.factura.toFixed(2), `$${parseFloat(total.saldo).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, nombre]);
-  }
-
-  // Agregar tabla de sumas totales por nombre al PDF
-  autoTable(doc, {
-    head: [['Factura', 'Importe', 'Pipas por pagar']],
-    body: totalTableData,
-    startY: doc.lastAutoTable.finalY + 10,
-    headStyles: { fillColor: '#A2DA6A', textColor: '#000000' }
-  });
-
-  // Generar gráfico
-
-  
-
-  // Footer del PDF
-  const totalPages = doc.internal.getNumberOfPages();
-  for (let i = 1; i <= totalPages; i++) {
-    doc.setPage(i);
-    doc.setFontSize(10);
-    doc.text('Página ' + i + ' de ' + totalPages, doc.internal.pageSize.getWidth() - 80, doc.internal.pageSize.getHeight() - 10);
-  }
-
-  // Guardar el PDF
-  doc.save('Reporte_Saldos_Proveedores.pdf');
+    // Guardar el PDF
+    doc.save('Reporte_Saldos_Proveedores.pdf');
 }
 
-
-    // ...resto de métodos...
   },
 
+  mounted() {
+    this.cargarEstaciones();
+  }
 
   
 };
+
 </script>
 
 
@@ -390,7 +319,7 @@ async downloadPDF() {
 
 .chart-container {
   width: 95%;
-  height: 800px;
+  height: 500px;
   margin-left: 5px;
   margin-right: 10px;
 }
@@ -426,16 +355,16 @@ table tr td:first-child {
 .tabla-totales {
   width: 800px; /* Cambia esto al ancho que desees */
   height: auto; /* Cambia esto a la altura que desees */
-  margin-left: auto;
-  margin-right: 200px;
+  margin-left: 90px;
+  margin-right: auto;
   transition: transform 0.5s ease, box-shadow 0.5s ease;
   
   
 }
 .tabla-totales:hover {
-  transform: translateY(-1rem)scale(1.04);
-  transform: translateX(-3rem)scale(1.04);
-  box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.9);
+  transform: translateY(-0.03rem)scale(1.03);
+  
+  box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.5);
 }
 
 .tabla-totales th,

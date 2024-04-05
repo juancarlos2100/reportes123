@@ -64,8 +64,11 @@
   <!-- Lado derecho -->
   <div class="right-container" style="flex: 0 0 45%; overflow: auto;">
     <h1>Tablero de Gráficas</h1>
+    <div class="chart-container1">
+      <canvas id="polarChart"></canvas>
+    </div>
     <div class="chart-container">
-      <canvas id="myChart"></canvas>
+      <canvas id="barChart"></canvas>
     </div>
     <div class="cont-total">
       <h1>Ultima Transaccion del Periodo</h1>
@@ -224,72 +227,119 @@ export default {
       this.totalesPorBanco = totalesPorBanco;
       this.updateChart();
     },
-    //fucncion para actualizar el grafico con cargos, abonos y diferencia
     updateChart() {
-    const ctx = document.getElementById('myChart').getContext('2d');
-    if (this.myChart) {
-      this.myChart.destroy();
-  }
+    const ctxBar = document.getElementById('barChart').getContext('2d');
+    const ctxPolar = document.getElementById('polarChart').getContext('2d');
 
-  // Colores base para las barras
-  const baseColors = [
-    'rgba(54, 162, 235, 0.3)',
-    'rgba(255, 99, 132, 0.3)',
-    'rgba(75, 192, 192, 0.3)'
-  ];
+    if (this.barChart) {
+        this.barChart.destroy();
+    }
+    if (this.polarChart) {
+        this.polarChart.destroy();
+    }
 
-  // Colores intensos al pasar el cursor
-  const hoverColors = [
-    'rgba(54, 162, 235, 0.6)',
-    'rgba(255, 99, 132, 0.6)',
-    'rgba(75, 192, 192, 0.6)'
-  ];
+    // Colores base para las barras
+    const baseColors = [
+        'rgba(54, 162, 235, 0.3)',
+        'rgba(255, 99, 132, 0.3)',
+        'rgba(75, 192, 192, 0.3)'
+    ];
 
-  this.myChart = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: '.',//Object.keys(this.totalesPorBanco),
-      datasets: [
-        {
-          label: 'Abonos',
-          data: Object.values(this.totalesPorBanco).map(totales => totales.cargos),
-          backgroundColor: baseColors[0],
-          hoverBackgroundColor: hoverColors[0],
-          borderColor: 'rgba(54, 162, 235, 1)',
-          borderWidth: 1
+    // Colores intensos al pasar el cursor
+    const hoverColors = [
+        'rgba(54, 162, 235, 0.6)',
+        'rgba(255, 99, 132, 0.6)',
+        'rgba(75, 192, 192, 0.6)'
+    ];
+
+    this.barChart = new Chart(ctxBar, {
+        type: 'bar',
+        data: {
+            labels: Object.keys(this.totalesPorBanco),
+            datasets: [{
+                    label: 'Cargos',
+                    data: Object.values(this.totalesPorBanco).map(totales => totales.abonos),
+                    backgroundColor: baseColors[0],
+                    hoverBackgroundColor: hoverColors[0],
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Abonos',
+                    data: Object.values(this.totalesPorBanco).map(totales => totales.cargos),
+                    backgroundColor: baseColors[1],
+                    hoverBackgroundColor: hoverColors[1],
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Diferencia',
+                    data: Object.values(this.totalesPorBanco).map(totales => totales.saldoFinal),
+                    backgroundColor: baseColors[2],
+                    hoverBackgroundColor: hoverColors[2],
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                }
+            ]
         },
-        {
-          label: 'Cargos',
-          data: Object.values(this.totalesPorBanco).map(totales => totales.abonos),
-          backgroundColor: baseColors[1],
-          hoverBackgroundColor: hoverColors[1],
-          borderColor: 'rgba(255, 99, 132, 1)',
-          borderWidth: 1
-        },
-        {
-          label: 'Diferencia',
-          data: Object.values(this.totalesPorBanco).map(totales => totales.saldoFinal),
-          backgroundColor: baseColors[2],
-          hoverBackgroundColor: hoverColors[2],
-          borderColor: 'rgba(75, 192, 192, 1)',
-          borderWidth: 1
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
         }
-      ]
-    },
-    options: {
-      scales: {
-        y: {
-          beginAtZero: true
+    });
+
+    this.polarChart = new Chart(ctxPolar, {
+        type: 'polarArea',
+        data: {
+            labels: ['Cargos', 'Abonos', 'Diferencia'],
+            datasets: [{
+                data: [
+                    Object.values(this.totalesPorBanco).reduce((acc, curr) => acc + curr.abonos, 0),
+                    Object.values(this.totalesPorBanco).reduce((acc, curr) => acc + curr.cargos, 0),
+                    Object.values(this.totalesPorBanco).reduce((acc, curr) => acc + curr.saldoFinal, 0)
+                ],
+                backgroundColor: baseColors,
+                hoverBackgroundColor: hoverColors
+            }]
+        },
+        options: {
+
+        },
+        plugins: {
+          title: {
+          display: true,
+          text: 'Proporción de cargos y abonos',
+          font: {
+          size: 14,
+          weight: 'bold'
+        }
+      },
+
+          
+        legend: {
+          labels: {
+            font: {
+              size: 12,
+              weight: 'bold'
+          }
         }
       }
     }
-  });
-},
+  
+    });
+    
+  },
+
 async downloadPDF() {
   let doc = new jsPDF();
+  
+  
 
   // Título del reporte con periodo de fechas y banco seleccionado
-  const titulo = `Transacciones bancarias: Reporte Operativo\n(${this.fechaInicio} al ${this.fechaFin})`;
+  const titulo = `Transacciones Bancarias - Estación: ${this.estaciones[this.dbm]}  \n Del (${this.fechaInicio} al ${this.fechaFin})`;
   // Remove the unused variable declaration
   // const titulo2 = `Del (${this.fechaInicio} al ${this.fechaFin})`;
   doc.text(titulo, doc.internal.pageSize.getWidth() / 2, 10, { align: 'center', fontStyle: 'bold' });
@@ -327,11 +377,12 @@ async downloadPDF() {
   }
 
   // Agregar tabla de ultima transacción del periodo al PDF
+  
   autoTable(doc, {
     head: [['Banco', 'Saldo Final']],
     body: ultimaTransaccionTableData,
     startY: doc.lastAutoTable.finalY + 10,
-    headStyles: { fillColor: '#A2DA6A', textColor: '#000000' }
+    headStyles: { fillColor: '#D3D3D3', textColor: '#000000' }
   });
 
   // Generar tabla de total de cargos y abonos por banco
@@ -345,7 +396,7 @@ async downloadPDF() {
     head: [['Banco', 'Cargos', 'Abonos', 'Diferencia']],
     body: totalesTableData,
     startY: doc.lastAutoTable.finalY + 10,
-    headStyles: { fillColor: '#A2DA6A', textColor: '#000000' }
+    headStyles: { fillColor: '#D3D3D3', textColor: '#000000' }
   });
 
   // Footer del PDF
@@ -353,8 +404,18 @@ async downloadPDF() {
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
     doc.setFontSize(10);
-    doc.text('Página ' + i + ' de ' + totalPages, doc.internal.pageSize.getWidth() - 80, doc.internal.pageSize.getHeight() - 10);
+    doc.text('Página ' + i + ' de ' + totalPages, doc.internal.pageSize.getWidth() - 80, doc.internal.pageSize.getHeight() - 2);
   }
+    // Agregar el gráfico al final del PDF
+    const canvas = document.getElementById('polarChart');
+    const imageData = canvas.toDataURL('image/png');
+    const imgWidth = 100; // Ancho deseado para la imagen
+    const imgHeight = 100; // Altura deseada para la imagen
+    const positionX = doc.internal.pageSize.getWidth() - imgWidth - 2; // Alineado a la derecha con un pequeño margen
+    const positionY = doc.internal.pageSize.getHeight() - imgHeight - 10; // Posición vertical desde la parte inferior del PDF
+    doc.addImage(imageData, 'PNG', positionX, positionY, imgWidth, imgHeight);
+
+
 
   // Guardar el PDF
   doc.save('Reporte_Transacciones_Bancarias.pdf');
@@ -383,9 +444,17 @@ async downloadPDF() {
 
 .chart-container {
   width: 95%;
-  height: 500px;
+  height: 600px;
   margin-left: 5px;
   margin-right: 10px;
+  margin-bottom: 10px;
+}
+.chart-container1 {
+  width: 90%;
+  height: 700px;
+  margin-left: 100px;
+  margin-right: 10px;
+  margin-bottom: 100px;
 }
 
 .table-container {
