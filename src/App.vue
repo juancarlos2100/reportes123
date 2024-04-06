@@ -13,6 +13,7 @@
     <router-link to="/reporte9">DESGLOSE</router-link>|
     <router-link to="/reporte10">Reporte Gastos</router-link>|
     <router-link to="/reporte11">General Gasolinas</router-link>|
+    <router-link to="/reporte12">Reporte Turnos</router-link>|
   </nav>
   <router-view/>
 </template>

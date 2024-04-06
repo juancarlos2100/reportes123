@@ -23,7 +23,8 @@
       <button class="boton-filtrar" type="submit">Filtrar</button>
     </form>
     <button class="boton-descargar" @click="downloadPDF">Descargar PDF</button>
-    <button class="boton-descargar" @click="downloadPDF">Descargar XLS</button>
+    <button class="boton-descargar" @click="exportExcel">Descargar XLS</button>
+
     </div>
     
     <div class="container" style="display: flex; height: 100%;">
@@ -98,6 +99,7 @@ import axios from "axios";
 import Chart from 'chart.js/auto';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import ExcelJS from 'exceljs'
 
 
 export default {
@@ -294,9 +296,74 @@ export default {
 
     // Guardar el PDF
     doc.save('Reporte_Saldos_Proveedores.pdf');
-}
+    },
+
+    exportExcel() {
+  this.$nextTick(async () => {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Sheet1');
+
+    let rowIndex = 1;
+
+    // Agregar el título del reporte
+    const titulo = `Saldos Proveedores - Estación: ${this.estaciones[this.dbm]} (ID: ${this.dbm}) \n Del (${this.fechaInicio} al ${this.fechaFin})`;
+    const titleCell = worksheet.getCell(rowIndex, 1);
+    titleCell.value = titulo;
+    titleCell.font = { bold: true, size: 14 }; // Hacer el título negrita y un poco más grande
+    rowIndex += 2; // Dejar dos filas vacías entre el título y la tabla
+
+    // Obtener las tablas de la vista
+    const tables = this.$el.querySelectorAll('.tabla-totales');
+
+    // Iterar sobre cada tabla y agregarla al documento Excel
+    for (let i = 0; i < tables.length; i++) {
+      const table = tables[i];
+
+      // Convertir la tabla HTML a un array de arrays
+      const data = Array.from(table.querySelectorAll('tr')).map(tr =>
+        Array.from(tr.querySelectorAll('td')).map(td => td.innerText)
+      );
+
+      // Agregar los datos a la hoja de Excel
+      data.forEach(row => {
+        row.forEach((value, colIndex) => {
+          const cell = worksheet.getCell(rowIndex, colIndex + 1);
+          cell.value = value;
+
+          // Aplicar negrita a los encabezados de cada columna
+          if (rowIndex === 1) {
+            cell.font = { bold: true };
+          }
+
+          // Ajustar el ancho de las columnas específicas
+          if (colIndex === 0) {
+            worksheet.getColumn(colIndex + 1).width = 30; // Primera columna
+          } else {
+            worksheet.getColumn(colIndex + 1).width = 20; // Todas las demás columnas
+          }
+        });
+        rowIndex++;
+      });
+
+      rowIndex++; // Dejar una fila vacía entre las tablas
+    }
+
+    // Guardar el libro de trabajo como un archivo .xlsx
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'informe_proveedores.xlsx';
+    a.click();
+  });
+},
+
+
 
   },
+
+
 
   mounted() {
     this.cargarEstaciones();
