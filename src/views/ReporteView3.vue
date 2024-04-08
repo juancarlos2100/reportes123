@@ -54,7 +54,7 @@
           </tbody>
           <tbody v-else>
             <tr>
-              <td colspan="5">No se encontraron registros que coincidan con su búsqueda</td>
+              <td colspan="6">No se encontraron registros que coincidan con su búsqueda</td>
             </tr>
           </tbody>
         </table>

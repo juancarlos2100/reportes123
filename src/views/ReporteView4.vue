@@ -26,23 +26,21 @@
 
     <div class="container" style="display: flex; height: 100%;">
        <!-- Lado izquierdo -->
-       <div class="left-container" style="flex: 0 0 40%; overflow: auto;">
+       <div class="left-container" style="flex: 0 0 55%; overflow: auto;">
           <table class="table">
             <thead>
               <tr>
-                <!--<th>estacion</th>-->
-                <!--<th>Estatus</th>-->
                 <th>id_turno</th>
                 <th>Fecha</th>
                 <th>estacion</th>
-                <th>diferencia</th>
+                <th>monto</th>
                 <th>monto depositado</th>
-                <!--<th>forma_pago</th>-->
+                <th>diferencia</th>
               </tr>
             </thead>
             <tbody>
               <tr v-if="resultados.length === 0">
-                <td colspan="5">No se encontraron registros que coincidan con su búsqueda</td>
+                <td colspan="6">No se encontraron registros que coincidan con su búsqueda</td>
               </tr>
               <tr v-for="(adeudo, index) in resultados" :key="index">
                 <td>{{ adeudo['id_turno'] }}</td>
@@ -50,9 +48,9 @@
                 <td>{{ adeudo['id_dbm'] }}</td>
                 
 
-                 <!--<td>{{ parseFloat(adeudo['monto']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>-->
+                 <td>{{ parseFloat(adeudo['monto']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
+                 <td>${{ parseFloat(adeudo['monto_depositado']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
                  <td>${{ parseFloat(adeudo['diferencia']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
-                <td>${{ parseFloat(adeudo['monto_depositado']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
               </tr>
             </tbody>
           </table>
@@ -60,7 +58,7 @@
         
 
        <!-- Lado derecho -->
-      <div class="right-container" style="flex: 0 0 60%; overflow: auto;">
+      <div class="right-container" style="flex: 0 0 45%; overflow: auto;">
         <h1>Tablero de Gráficas</h1>
         <div class="chart-container">
           <canvas id="myChart"></canvas>
@@ -71,31 +69,29 @@
         </div>
         <div class="cont-total">
           <h1>Total de efectivo</h1>
-          <table class="tabla-totales">
-            <thead>
-              <tr>
-                <th>Efectivo por depositar</th> <!-- Cambiado 'Factura' por 'Efectivo por depositar' -->
-                <th>monto depositado</th>
-                <th>Importe</th>
-              </tr>
-            </thead>
-            
-
-              <tr v-for="(adeudo, index) in resultadosFiltrados" :key="index">
-                <td>{{ adeudo['id_turno'] }}</td> <!-- Cambiado 'total.factura.toFixed(2)' por 'adeudo['id_turno']' -->
-                <td>${{ adeudo['diferencia'] }}</td> <!-- Cambiado 'total.saldo.toFixed(2)' por 'adeudo['diferencia']' -->
-                <td>{{ parseFloat(adeudo['monto']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
-              </tr>
-              <tr v-if="resultadosFiltrados.length > 0">
-                <td><strong>Total</strong></td>
-                <td>${{ totalImporte.toFixed(2) }}</td> <!-- Nueva fila para el total -->
-              </tr>
-    
-          </table>
+            <table class="tabla-totales">
+              <thead>
+                <tr>
+                  <th>Id del turno</th>
+                  <th>Monto</th>
+                  <th>Monto depositado</th>
+                  <th>Diferencia</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(adeudo, index) in totalImporte" :key="index">
+                  <td>{{ adeudo['id_turno'] }}</td>
+                  <td>${{ parseFloat(adeudo['monto']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
+                  <td>${{ parseFloat(adeudo['monto_depositado']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
+                  <td>${{ parseFloat(adeudo['diferencia']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
+                </tr>
+                <tr>
+                  <td colspan="3"><strong>Total</strong></td>
+                  <td><strong>${{ totalDiferencia.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
+                </tr>
+              </tbody>
+            </table>
           <div style="display: flex; justify-content: center; width: 25%; height: 25%;">
-            <div style="width: 120%; height: 120%;">
-              <canvas id="myChartPositive"></canvas>
-            </div>
           </div>
         </div>
       </div>
@@ -114,32 +110,24 @@ export default {
       fechaInicio: null,
       fechaFin: null,
       dbm: null, // Añadido dbm a los datos
-      totalImporte: 0,
-      estaciones: {
-        1: 'OKTAN REMDU',
-        2: 'OKTAN SMART ENERGY',
-        3: 'OKTAN COLIBRI',
-        4: 'OKTAN CASCADA',
-        5: 'GASOLINERA EL MAYORAZGO',
-        6: 'GASOLINERA GRANJAS SAN ISIDRO',
-        7: 'GASOLINERA CASTILLOTLA',
-        8: 'OKTAN PERIFERICO SAN JOSE',
-        9: 'OKTAN EKO',
-        10: 'OKTAN MAGNUS',
-        11: 'OKTAN CLEAN ENERGY',
-        12: 'SERVI OKTAN',
-        13: 'SERVIOK',
-        14: 'GRUPO GASOLINERO EXITO',
-        15: 'SERVI K-FIVER',
-        16: 'SERVICIO GAS 5',
-        17: 'GASOLINERIA SAN FERNANDO',
-        18: 'OKTAN SERVITALLERES',
-        19: 'OKTAN SERVI PENINSULAR',
-        20: 'SERVIGAS-VANGUARD'
-      },
+      totalImporte: [],
+      totalDiferencia: 0, // Nueva propiedad para almacenar la suma total de las diferencias
+      estaciones: {},
     };
   },
   methods: {
+    async cargarEstaciones() {
+      const url = 'http://gasserver.dyndns.org:8081/admin/get.php/estaciones';
+      try {
+        const response = await axios.get(url);
+        this.estaciones = response.data.data.reduce((acc, item) => {
+          acc[item.id_dbm] = `${item.id_dbm} - ${item.nombre}`;
+          return acc;
+        }, {});
+      } catch (error) {
+        console.error("Error al obtener las estaciones:", error);
+      }
+    },
     async filtrarDatos() {
       if (this.fechaInicio && this.fechaFin && this.dbm) {
         const url = "http://gasserver.dyndns.org:8081/admin/get.php/depositoefectivo";
@@ -153,23 +141,37 @@ export default {
           const response = await axios.get(url, { params });
           console.log(response); // Agrega esto para ver la respuesta de la API
           this.resultados = response.data.data;
-          this.resultadosFiltrados = this.resultados; // Asegúrate de asignar los datos filtrados a resultadosFiltrados
-          this.totalImporte = this.calcularTotalImporte(this.resultados);
+          this.resultadosFiltrados = this.resultados; // Asigna los datos a resultadosFiltrados
+          this.totalImporte = this.calcularTotalImporte(this.resultadosFiltrados);
+          this.totalDiferencia = this.totalImporte.reduce((total, adeudo) => total + parseFloat(adeudo.diferencia), 0); // Calcula la suma total de las diferencias
         } catch (error) {
           console.error("Error al obtener datos de la API:", error);
         }
       } else {
         this.resultados = [];
-        this.totalImporte = 0;
+        this.totalImporte = [];
+        this.totalDiferencia = 0;
       }
     },
 
     calcularTotalImporte(resultados) {
-      return resultados.reduce((total, adeudo) => total + parseFloat(adeudo['diferencia']), 0);
+      return resultados
+        .filter(item => parseFloat(item.diferencia) > 0) // Filtra los resultados donde la diferencia es mayor a 0
+        .map(adeudo => ({
+          id_turno: adeudo.id_turno,
+          monto: adeudo.monto,
+          monto_depositado: adeudo.monto_depositado,
+          diferencia: adeudo.diferencia
+        }));
     },
   },
+  mounted() {
+    this.cargarEstaciones();
+  }
 };
 </script>
+
+
 
 
 
@@ -219,15 +221,14 @@ table tr td:first-child {
 .tabla-totales {
   width: 800px; /* Cambia esto al ancho que desees */
   height: auto; /* Cambia esto a la altura que desees */
-  margin-left: auto;
+  margin-left: 90px;
   margin-right: 200px;
   transition: transform 0.5s ease, box-shadow 0.5s ease;
   
   
 }
 .tabla-totales:hover {
-  transform: translateY(-0.5rem)scale(1.04);
-  transform: translateX(-0.5rem)scale(1.04);
+  transform: translateY(-0.2rem);
   box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.9);
 }
 
