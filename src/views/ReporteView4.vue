@@ -64,9 +64,6 @@
           <canvas id="myChart"></canvas>
         </div>
         <!-- Nuevo gráfico de pastel (chart2) -->
-        <div class="chart-container">
-          <canvas id="myPieChart"></canvas>
-        </div>
         <div class="cont-total">
           <h1>Total de efectivo</h1>
             <table class="tabla-totales">
@@ -86,7 +83,7 @@
                   <td>${{ parseFloat(adeudo['diferencia']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
                 </tr>
                 <tr>
-                  <td colspan="3"><strong>Total</strong></td>
+                  <td colspan="3"><strong>Total de efectivo depositado </strong></td>
                   <td><strong>${{ totalDiferencia.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
                 </tr>
               </tbody>
@@ -101,6 +98,7 @@
 
 <script>
 import axios from "axios";
+import Chart from "chart.js/auto"; 
 
 export default {
   data() {
@@ -144,6 +142,7 @@ export default {
           this.resultadosFiltrados = this.resultados; // Asigna los datos a resultadosFiltrados
           this.totalImporte = this.calcularTotalImporte(this.resultadosFiltrados);
           this.totalDiferencia = this.totalImporte.reduce((total, adeudo) => total + parseFloat(adeudo.diferencia), 0); // Calcula la suma total de las diferencias
+          this.updateChart();
         } catch (error) {
           console.error("Error al obtener datos de la API:", error);
         }
@@ -164,7 +163,95 @@ export default {
           diferencia: adeudo.diferencia
         }));
     },
+    async updateChart() {
+    // Obtener los datos filtrados
+    const datosFiltrados = this.resultadosFiltrados;
+
+    // Preparar los datos para el gráfico circular
+    const dataForChart = datosFiltrados.reduce((acc, item) => {
+      // Verificar si ya existe un objeto con la misma id_turno
+      const existingItemIndex = acc.findIndex(obj => obj.id_turno === item.id_turno);
+
+      if (existingItemIndex !== -1) {
+        // Si ya existe, sumar la diferencia al valor existente
+        acc[existingItemIndex].diferencia += parseFloat(item.diferencia);
+      } else {
+        // Si no existe, añadir un nuevo objeto
+        acc.push({
+          id_turno: item.id_turno,
+          diferencia: parseFloat(item.diferencia)
+        });
+      }
+      return acc;
+    }, []);
+
+    // Eliminar el gráfico anterior si existe
+    if (this.chart) {
+      this.chart.destroy();
+    }
+
+    // Generar colores aleatorios para cada rebanada del gráfico
+    const baseColors = [
+      'rgba(255, 99, 132, 0.5)',
+      'rgba(54, 162, 235, 0.5)',
+      'rgba(255, 206, 86, 0.5)',
+      'rgba(75, 192, 192, 0.5)',
+      'rgba(153, 102, 255, 0.5)',
+      'rgba(255, 159, 64, 0.5)'
+    ];
+
+    const highlightedColors = [
+      'rgba(255, 99, 132, 0.8)',
+      'rgba(54, 162, 235, 0.8)',
+      'rgba(255, 206, 86, 0.8)',
+      'rgba(75, 192, 192, 0.8)',
+      'rgba(153, 102, 255, 0.8)',
+      'rgba(255, 159, 64, 0.8)'
+    ];
+
+    const backgroundColors = [];
+    const hoverBackgroundColors = [];
+
+    dataForChart.forEach((item, index) => {
+      const baseColor = baseColors[index % baseColors.length];
+      const highlightedColor = highlightedColors[index % highlightedColors.length];
+      backgroundColors.push(baseColor);
+      hoverBackgroundColors.push(highlightedColor);
+    });
+
+    // Crear el nuevo gráfico circular
+    const ctx = document.getElementById('myChart').getContext('2d');
+    this.chart = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: dataForChart.map(item => item.id_turno),
+        datasets: [{
+          label: 'Diferencia',
+          data: dataForChart.map(item => item.diferencia),
+          backgroundColor: backgroundColors,
+          hoverBackgroundColor: hoverBackgroundColors,
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        legend: {
+          display: true,
+          position: 'bottom',
+          labels: {
+            fontColor: 'rgb(0, 0, 0)'
+          }
+        },
+        title: {
+          display: true,
+          text: 'Diferencia por id_turno'
+        }
+      }
+    });
+  }
   },
+  
   mounted() {
     this.cargarEstaciones();
   }
