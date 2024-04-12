@@ -35,7 +35,7 @@
             <tr>
               <th>Banco</th>
               <th>Descripcion</th>
-              <th>id tipo</th>
+              <th>Movimiento</th>
               <th>Fecha Contable</th>
               <th>Monto</th>
               <th>Saldo</th>
@@ -46,7 +46,7 @@
             <tr v-for="(adeudo, index) in resultados" :key="index">
               <td>{{ adeudo['banco'] }}</td>
               <td>{{ adeudo['descripcion'].length > 45 ? adeudo['descripcion'].slice(0, 45) + '...' : adeudo['descripcion'] }}</td>
-              <td><strong>{{ adeudo['id_tipo'] === '1' ? 'Cargo' : (adeudo['id_tipo'] === '2' ? 'Abono' : 'otro') }}</strong></td>
+              <td><strong>{{ adeudo['id_tipo'] === '1' ? 'Abonos' : (adeudo['id_tipo'] === '2' ? 'Cargos' : 'otro') }}</strong></td>
               <td>{{ adeudo['fecha_contable'] }}</td>
               <td>${{ parseFloat(adeudo['monto']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
               <td>${{ parseFloat(adeudo['saldo']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
@@ -68,21 +68,21 @@
       <canvas id="polarChart"></canvas>
     </div>
     <div class="chart-container">
-      <canvas id="barChart"></canvas>
+      <canvas id="lineChart"></canvas>
               <!-- Tu contenido existente -->
         <!-- Alerta cuando la deuda al banco supera el 50% -->
         <h1 v-if="mostrarAlertas && porcentajeCuentaNoPagada > 50" style="color: red;">
-        ¡Atención! La deuda al banco supera el 50% en el periodo seleccionado
+        Los cargos superan en mas de 50% a los abonos en el periodo seleccionado
         </h1>
     
         <!-- Alerta cuando la deuda al banco supera el 15% -->
         <h1 v-if="mostrarAlertas && porcentajeCuentaNoPagada > 15 && porcentajeCuentaNoPagada <= 50" style="color: orange;">
-          La deuda al banco es más del 15% en el periodo seleccionado
+          los catgos superan en mas de 15% a los abonos en el periodo seleccionado
         </h1>
 
         <!-- Alerta cuando la deuda al banco no supera el 15% -->
         <h1 v-if="mostrarAlertas && porcentajeCuentaNoPagada <= 15" style="color: green;">
-          La deuda al banco no supera el 15%.
+          La proporcion de cargos y abonos es similar 
         </h1>
       <div>
   </div>
@@ -206,6 +206,7 @@ export default {
           this.calcularTotalesPorBanco();
           this.mostrarResultados = true;
           this.mostrarAlertas = true;
+          this.updateChart();
         } catch (error) {
           console.error("Error al obtener datos de la API:", error);
         }
@@ -222,8 +223,8 @@ export default {
     },
     calcularTotalesPorBanco() {
     const totalesPorBanco = {};
-    const porcentajeLimite = 15; // Porcentaje límite para la alerta
-    let alertaMostrada = false; // Variable para controlar si se ha mostrado la alerta
+    const porcentajeLimite = 15;
+    let alertaMostrada = false; 
 
     this.resultados.forEach(adeudo => {
         const banco = adeudo.banco;
@@ -246,232 +247,293 @@ export default {
         totalesPorBanco[banco].saldo += parseFloat(adeudo.saldo);
         totalesPorBanco[banco].saldoFinal = Math.abs(totalesPorBanco[banco].abonos - totalesPorBanco[banco].cargos);
 
-        // Agregar la lógica de calcularUltimoSaldoPorBanco aquí
         if (adeudo.banco && adeudo.saldo) {
             totalesPorBanco[adeudo.banco].ultimoSaldo = adeudo.saldo;
         }
-
-        // Calcular porcentajes
         const porcentajeCuentaNoPagada = (totalesPorBanco[banco].saldoFinal / totalesPorBanco[banco].cargos) * 100;
-        this.porcentajeCuentaNoPagada = porcentajeCuentaNoPagada; // Actualizar la variable de datos
+        this.porcentajeCuentaNoPagada = porcentajeCuentaNoPagada; 
 
-        // Mostrar alerta si la deuda supera el porcentaje límite
         if (porcentajeCuentaNoPagada > porcentajeLimite) {
             console.log(`¡Atención! La deuda para el banco ${banco} supera el ${porcentajeLimite}%.`);
-            // Aquí puedes agregar lógica adicional para notificar al usuario o tomar medidas.
             alertaMostrada = true;
         }
     });
-
     if (!alertaMostrada) {
-        // Si no se ha mostrado la alerta, significa que la deuda no supera el 15%
         console.log("Deuda al banco no supera el 15 porciento.");
-        // Aquí puedes mostrar una alerta en la interfaz de usuario si lo deseas.
     }
-
     this.totalesPorBanco = totalesPorBanco;
     this.updateChart();
 },
 
+updateChart() {
+  const ctxPolar = document.getElementById('polarChart').getContext('2d');
+  const ctxLine = document.getElementById('lineChart').getContext('2d');
 
-    
+  if (this.barChart) {
+    this.barChart.destroy();
+  }
+  if (this.polarChart) {
+    this.polarChart.destroy();
+  }
+  if (this.lineChart) {
+    this.lineChart.destroy();
+  }
 
+  // Colores base para las barras
+  const baseColors = [
+    'rgba(54, 162, 235, 0.3)',
+    'rgba(255, 99, 132, 0.3)',
+    'rgba(75, 192, 192, 0.3)'
+  ];
 
+  // Colores intensos al pasar el cursor
+  const hoverColors = [
+    'rgba(54, 162, 235, 0.6)',
+    'rgba(255, 99, 132, 0.6)',
+    'rgba(75, 192, 192, 0.6)'
+  ];
 
-    updateChart() {
-    const ctxBar = document.getElementById('barChart').getContext('2d');
-    const ctxPolar = document.getElementById('polarChart').getContext('2d');
-
-    if (this.barChart) {
-        this.barChart.destroy();
-    }
-    if (this.polarChart) {
-        this.polarChart.destroy();
-    }
-
-    // Colores base para las barras
-    const baseColors = [
-        'rgba(54, 162, 235, 0.3)',
-        'rgba(255, 99, 132, 0.3)',
-        'rgba(75, 192, 192, 0.3)'
-    ];
-
-    // Colores intensos al pasar el cursor
-    const hoverColors = [
-        'rgba(54, 162, 235, 0.6)',
-        'rgba(255, 99, 132, 0.6)',
-        'rgba(75, 192, 192, 0.6)'
-    ];
-
-    this.barChart = new Chart(ctxBar, {
-        type: 'bar',
-        data: {
-            labels: Object.keys(this.totalesPorBanco),
-            datasets: [{
-                    label: 'Cargos',
-                    data: Object.values(this.totalesPorBanco).map(totales => totales.abonos),
-                    backgroundColor: baseColors[0],
-                    hoverBackgroundColor: hoverColors[0],
-                    borderColor: 'rgba(54, 162, 235, 1)',
-                    borderWidth: 1
-                },
-                {
-                    label: 'Abonos',
-                    data: Object.values(this.totalesPorBanco).map(totales => totales.cargos),
-                    backgroundColor: baseColors[1],
-                    hoverBackgroundColor: hoverColors[1],
-                    borderColor: 'rgba(255, 99, 132, 1)',
-                    borderWidth: 1
-                },
-                {
-                    label: 'Diferencia',
-                    data: Object.values(this.totalesPorBanco).map(totales => totales.saldoFinal),
-                    backgroundColor: baseColors[2],
-                    hoverBackgroundColor: hoverColors[2],
-                    borderColor: 'rgba(75, 192, 192, 1)',
-                    borderWidth: 1
-                }
-            ]
-        },
-        options: {
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
-            }
+  // Gráfico polar
+  this.polarChart = new Chart(ctxPolar, {
+    type: 'polarArea',
+    data: {
+      labels: ['Cargos', 'Abonos', 'Diferencia'],
+      datasets: [
+        {
+          data: [
+            Object.values(this.totalesPorBanco).reduce((acc, curr) => acc + curr.abonos, 0),
+            Object.values(this.totalesPorBanco).reduce((acc, curr) => acc + curr.cargos, 0),
+            Object.values(this.totalesPorBanco).reduce((acc, curr) => acc + curr.saldoFinal, 0)
+          ],
+          backgroundColor: baseColors,
+          hoverBackgroundColor: hoverColors
         }
-    });
-
-    this.polarChart = new Chart(ctxPolar, {
-        type: 'polarArea',
-        data: {
-            labels: ['Cargos', 'Abonos', 'Diferencia'],
-            datasets: [{
-                data: [
-                    Object.values(this.totalesPorBanco).reduce((acc, curr) => acc + curr.abonos, 0),
-                    Object.values(this.totalesPorBanco).reduce((acc, curr) => acc + curr.cargos, 0),
-                    Object.values(this.totalesPorBanco).reduce((acc, curr) => acc + curr.saldoFinal, 0)
-                ],
-                backgroundColor: baseColors,
-                hoverBackgroundColor: hoverColors
-            }]
-        },
-        options: {
-
-        },
-        plugins: {
-          title: {
+      ]
+    },
+    options: {
+      plugins: {
+        title: {
           display: true,
           text: 'Proporción de cargos y abonos',
           font: {
-          size: 14,
-          weight: 'bold'
-        }
-      },
-
-          
+            size: 14,
+            weight: 'bold'
+          }
+        },
         legend: {
           labels: {
             font: {
               size: 12,
               weight: 'bold'
+            }
           }
         }
       }
     }
-  
-    });
-    
-  },
+  });
 
-    async downloadPDF() {
-      let doc = new jsPDF();
+  // Agrupar los registros por semana
+  const dataPorSemana = this.agruparPorSemana(this.resultados);
 
-      // Título del reporte con periodo de fechas y banco seleccionado
-      const titulo = `Transacciones Bancarias - Estación: ${this.estaciones[this.dbm]}  \n Del (${this.fechaInicio} al ${this.fechaFin})`;
-      doc.text(titulo, doc.internal.pageSize.getWidth() / 2, 10, { align: 'center', fontStyle: 'bold' });
+  // Colores base para las líneas
+  const lineColors = [
+    'rgba(255, 99, 132, 0.3)', // Rojo
+    'rgba(54, 162, 235, 0.3)'   // Azul
+  ];
 
-      // Encabezado de la tabla de transacciones registradas
-      const encabezado = "Transacciones Registradas";
-      doc.text(encabezado, 10, 30, { fontSize: 16 });
+  // Colores intensos al pasar el cursor
+  const hoverLineColors = [
+    'rgba(255, 99, 132, 0.6)', // Rojo
+    'rgba(54, 162, 235, 0.6)'   // Azul
+  ];
 
-      // Generar tabla de transacciones registradas
-      const transaccionesTableData = [];
-      this.resultados.forEach(adeudo => {
-        const rowData = [
-          adeudo.banco,
-          adeudo.descripcion.length > 45 ? adeudo.descripcion.slice(0, 45) + '...' : adeudo.descripcion,
-          adeudo.id_tipo === '1' ? 'Cargo' : (adeudo.id_tipo === '2' ? 'Abono' : 'otro'),
-          adeudo.fecha_contable,
-          `$${parseFloat(adeudo.monto).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-          `$${parseFloat(adeudo.saldo).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-        ];
-        transaccionesTableData.push(rowData);
-      });
-
-      // Agregar tabla de transacciones registradas al PDF
-      autoTable(doc, {
-        head: [['Banco', 'Descripción', 'ID Tipo', 'Fecha Contable', 'Monto', 'Saldo']],
-        body: transaccionesTableData,
-        startY: 40,
-        headStyles: { fillColor: '#D3D3D3', textColor: '#000000' }
-      });
-
-      // Generar tabla de ultima transacción del periodo
-      const ultimaTransaccionTableData = [];
-      for (const [banco, saldo] of Object.entries(this.totalesPorBanco)) {
-        ultimaTransaccionTableData.push([banco, `$${Number(saldo.ultimoSaldo).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`]);
+  // Gráfico de líneas
+  this.lineChart = new Chart(ctxLine, {
+    type: 'line',
+    data: {
+      labels: dataPorSemana.map(semana => semana.fechaInicio), // Utilizar la fecha de inicio de cada semana como etiqueta
+      datasets: [
+        {
+          label: 'Cargos',
+          data: dataPorSemana.map(semana => semana.cargos.reduce((acc, curr) => acc + curr, 0)),
+          borderColor: lineColors[0], // Rojo
+          pointBackgroundColor: hoverLineColors[0], // Puntos en color más intenso al pasar el cursor
+          fill: false
+        },
+        {
+          label: 'Abonos',
+          data: dataPorSemana.map(semana => semana.abonos.reduce((acc, curr) => acc + curr, 0)),
+          borderColor: lineColors[1], // Azul
+          pointBackgroundColor: hoverLineColors[1], // Puntos en color más intenso al pasar el cursor
+          fill: false
+        }
+      ]
+    },
+    options: {
+      scales: {
+        y: {
+          beginAtZero: true
+        }
       }
-
-      // Agregar tabla de ultima transacción del periodo al PDF
-      autoTable(doc, {
-        head: [['Banco', 'Saldo Final']],
-        body: ultimaTransaccionTableData,
-        startY: doc.lastAutoTable.finalY + 10,
-        headStyles: { fillColor: '#D3D3D3', textColor: '#000000' }
-      });
-
-      // Generar tabla de total de cargos y abonos por banco
-      const totalesTableData = [];
-      for (const [banco, totales] of Object.entries(this.totalesPorBanco)) {
-        totalesTableData.push([banco, `$${totales.cargos.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, `$${totales.abonos.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, `$${totales.saldoFinal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`]);
-      }
-
-      // Agregar tabla de total de cargos y abonos por banco al PDF
-      autoTable(doc, {
-        head: [['Banco', 'Cargos', 'Abonos', 'Diferencia']],
-        body: totalesTableData,
-        startY: doc.lastAutoTable.finalY + 10,
-        headStyles: { fillColor: '#D3D3D3', textColor: '#000000' }
-      });
-
-      // Footer del PDF
-      const totalPages = doc.internal.getNumberOfPages();
-      for (let i = 1; i <= totalPages; i++) {
-        doc.setPage(i);
-        doc.setFontSize(10);
-        doc.text('Página ' + i + ' de ' + totalPages, doc.internal.pageSize.getWidth() - 80, doc.internal.pageSize.getHeight() - 2);
-      }
-
-      // Agregar el gráfico al final del PDF
-      const canvas = document.getElementById('polarChart');
-      const imageData = canvas.toDataURL('image/png');
-      const imgWidth = 100; // Ancho deseado para la imagen
-      const imgHeight = 100; // Altura deseada para la imagen
-      const positionX = doc.internal.pageSize.getWidth() - imgWidth - 2; // Alineado a la derecha con un pequeño margen
-      const positionY = doc.internal.pageSize.getHeight() - imgHeight - 10; // Posición vertical desde la parte inferior del PDF
-      doc.addImage(imageData, 'PNG', positionX, positionY, imgWidth, imgHeight);
-
-      // Guardar el PDF
-      doc.save('Reporte_Transacciones_Bancarias.pdf');
     }
+  });
+},
 
 
+        // Función para agrupar los registros por semana
+      agruparPorSemana(resultados) {
+        const dataPorSemana = [];
+        let semanaActual = null;
+        let semanaData = null;
+        let totalDiasUltimaSemana = 0; // Variable para almacenar el número de días en la última semana
 
-  
-  },
+        resultados.forEach(resultado => {
+          const fecha = new Date(resultado.fecha_contable);
+          const semana = this.obtenerSemana(fecha);
+
+          if (semana !== semanaActual) {
+            // Iniciar nueva semana
+            semanaActual = semana;
+            semanaData = {
+              fechaInicio: this.obtenerFechaInicioSemana(fecha),
+              cargos: [],
+              abonos: []
+            };
+            dataPorSemana.push(semanaData);
+          }
+
+          // Agregar cargos y abonos a la semana actual
+          if (resultado.id_tipo === '1') {
+            semanaData.cargos.push(parseFloat(resultado.monto));
+            semanaData.abonos.push(0); // Insertar 0 para mantener la integridad de los datasets
+          } else if (resultado.id_tipo === '2') {
+            semanaData.abonos.push(parseFloat(resultado.monto));
+            semanaData.cargos.push(0); // Insertar 0 para mantener la integridad de los datasets
+          }
+
+          // Actualizar el número de días en la última semana
+          if (semana === this.obtenerSemana(new Date())) {
+            totalDiasUltimaSemana = fecha.getDate();
+          }
+        });
+
+        // Manejar los días restantes en la última semana
+        if (totalDiasUltimaSemana !== 0) {
+          const ultimaSemana = dataPorSemana[dataPorSemana.length - 1];
+          const diasRestantes = 7 - ultimaSemana.cargos.length; // Días restantes en la semana actual
+
+          // Llenar con ceros los días restantes en la última semana
+          for (let i = 0; i < diasRestantes; i++) {
+            ultimaSemana.cargos.push(0);
+            ultimaSemana.abonos.push(0);
+          }
+        }
+
+        return dataPorSemana;
+      },
+
+        // Función para obtener el número de semana de una fecha
+        obtenerSemana(fecha) {
+          const inicioAnio = new Date(fecha.getFullYear(), 0, 1);
+          const diferencia = fecha - inicioAnio;
+          const unaSemana = 1000 * 60 * 60 * 24 * 7;
+          return Math.ceil((diferencia - inicioAnio.getDay() * (1000 * 60 * 60 * 24)) / unaSemana);
+        },
+
+        // Función para obtener la fecha de inicio de una semana a partir de una fecha
+        obtenerFechaInicioSemana(fecha) {
+          const dia = fecha.getDay();
+          const inicioSemana = new Date(fecha);
+          inicioSemana.setDate(fecha.getDate() - dia); // Retroceder hasta el primer día de la semana (domingo)
+          return inicioSemana.toISOString().split('T')[0]; // Obtener la fecha en formato 'YYYY-MM-DD'
+        },
+        async downloadPDF() {
+        let doc = new jsPDF();
+
+        // Título del reporte con periodo de fechas y banco seleccionado
+        const titulo = `Transacciones Bancarias - Estación: ${this.estaciones[this.dbm]}  \n Del (${this.fechaInicio} al ${this.fechaFin})`;
+        doc.text(titulo, doc.internal.pageSize.getWidth() / 2, 10, { align: 'center', fontStyle: 'bold' });
+
+        // Encabezado de la tabla de transacciones registradas
+        const encabezado = "Transacciones Registradas";
+        doc.text(encabezado, 10, 30, { fontSize: 16 });
+
+        // Generar tabla de transacciones registradas
+        const transaccionesTableData = [];
+        this.resultados.forEach(adeudo => {
+          const rowData = [
+            adeudo.banco,
+            adeudo.descripcion.length > 45 ? adeudo.descripcion.slice(0, 45) + '...' : adeudo.descripcion,
+            adeudo.id_tipo === '1' ? 'Abono' : (adeudo.id_tipo === '2' ? 'Cargo' : 'otro'),
+            adeudo.fecha_contable,
+            `$${parseFloat(adeudo.monto).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+            `$${parseFloat(adeudo.saldo).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+          ];
+          transaccionesTableData.push(rowData);
+        });
+
+        // Agregar tabla de transacciones registradas al PDF
+        autoTable(doc, {
+          head: [['Banco', 'Descripción', 'Movimiento', 'Fecha Contable', 'Monto', 'Saldo']],
+          body: transaccionesTableData,
+          startY: 40,
+          headStyles: { fillColor: '#D3D3D3', textColor: '#000000' }
+        });
+
+        // Generar tabla de ultima transacción del periodo
+        const ultimaTransaccionTableData = [];
+        for (const [banco, saldo] of Object.entries(this.totalesPorBanco)) {
+          ultimaTransaccionTableData.push([banco, `$${Number(saldo.ultimoSaldo).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`]);
+        }
+
+        // Agregar tabla de ultima transacción del periodo al PDF
+        autoTable(doc, {
+          head: [['Banco', 'Saldo Final']],
+          body: ultimaTransaccionTableData,
+          startY: doc.lastAutoTable.finalY + 10,
+          headStyles: { fillColor: '#D3D3D3', textColor: '#000000' }
+        });
+
+        // Generar tabla de total de cargos y abonos por banco
+        const totalesTableData = [];
+        for (const [banco, totales] of Object.entries(this.totalesPorBanco)) {
+          totalesTableData.push([banco, `$${totales.cargos.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, `$${totales.abonos.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, `$${totales.saldoFinal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`]);
+        }
+
+        // Agregar tabla de total de cargos y abonos por banco al PDF
+        autoTable(doc, {
+          head: [['Banco', 'Cargos', 'Abonos', 'Diferencia']],
+          body: totalesTableData,
+          startY: doc.lastAutoTable.finalY + 10,
+          headStyles: { fillColor: '#D3D3D3', textColor: '#000000' }
+        });
+
+        // Footer del PDF
+        const totalPages = doc.internal.getNumberOfPages();
+        for (let i = 1; i <= totalPages; i++) {
+          doc.setPage(i);
+          doc.setFontSize(10);
+          doc.text('Página ' + i + ' de ' + totalPages, doc.internal.pageSize.getWidth() - 80, doc.internal.pageSize.getHeight() - 2);
+        }
+
+        // Agregar el gráfico al final del PDF
+        const canvas = document.getElementById('polarChart');
+        const imageData = canvas.toDataURL('image/png');
+        const imgWidth = 100; // Ancho deseado para la imagen
+        const imgHeight = 100; // Altura deseada para la imagen
+        const positionX = doc.internal.pageSize.getWidth() - imgWidth - 2; // Alineado a la derecha con un pequeño margen
+        const positionY = doc.internal.pageSize.getHeight() - imgHeight - 10; // Posición vertical desde la parte inferior del PDF
+        doc.addImage(imageData, 'PNG', positionX, positionY, imgWidth, imgHeight);
+
+        // Guardar el PDF
+        doc.save('Reporte_Transacciones_Bancarias.pdf');
+      }
+
+    
+    },
   mounted() {
     this.cargarEstaciones();
+    
   }
 };
 </script>

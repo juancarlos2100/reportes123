@@ -6,11 +6,14 @@
     <h1>Reporte Operativo</h1>
     <h2> Inventario Gasolina</h2>
     <form @submit.prevent="filtrarDatos">
-      <label for="fechaInicio" style="font-size: 20px; font-weight: bold; padding-right: 10px;" >Fecha de Inicio:</label>
-      <input type="date" v-model="fechaInicio" style="margin-right:10px;">
-      
-      <label for="fechaFin" style="font-size: 20px; font-weight: bold; padding-right: 10px;">Fecha de Fin:</label>
-      <input type="date" v-model="fechaFin" style="margin-right:10px;">
+      <label for="estacion" style="font-size: 24px; font-weight: bold; padding-right: 10px; font-family: Arial, sans-serif;">Estación:</label>
+        <select id="estacion" v-model="dbm" style="width: 400px; height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;">
+          <option v-for="(nombre, id) in estaciones" :key="id" :value="id">{{ nombre }}</option>
+        </select>
+      <label for="fechaInicio" style="font-size: 24px; font-weight: bold; padding-right: 10px; font-family: Arial, sans-serif;">Fecha de Inicio:</label>
+        <input type="date" v-model="fechaInicio" style="width: 400px; height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;">
+        <label for="fechaFin" style="font-size: 24px; font-weight: bold; padding-right: 10px; font-family: Arial, sans-serif;">Fecha de Fin:</label>
+        <input type="date" v-model="fechaFin" style="width: 400px; height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;">
 
       <button class="boton-filtrar" type="submit">Filtrar</button>
     </form>
@@ -62,173 +65,129 @@
         </tr>
       </tbody>
     </table>
-    
-    <!-- Nueva tabla con las sumas totales -->
-
-
   </div>
 </template>
 
 <script>
 import axios from "axios";
-//import * as XLSX from 'xlsx';
-import ExcelJS from 'exceljs'
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 
 export default {
   data() {
     return {
       resultados: [],
-      idTipo: null,
-      estatus: null,
       fechaInicio: null,
       fechaFin: null,
-      totalesPorBanco: {},
-      totalUtilidad: 0,
+      dbm: null,
+      estaciones: {},
     };
   },
-  computed: {
-    calcularTotalUtilidad() {
-      return this.resultados.reduce((total, adeudo) => total + adeudo.utilidad, 0);
+  methods: {
+    async cargarEstaciones() {
+      const url = 'http://gasserver.dyndns.org:8081/admin/get.php/estaciones';
+      try {
+        const response = await axios.get(url);
+        this.estaciones = response.data.data.reduce((acc, item) => {
+          acc[item.id_dbm] = `${item.id_dbm} - ${item.nombre}`;
+          return acc;
+        }, {});
+      } catch (error) {
+        console.error("Error al obtener las estaciones:", error);
+      }
     },
+    async filtrarDatos() {
+      if (this.fechaInicio && this.fechaFin && this.dbm) {
+        const url = "http://gasserver.dyndns.org:8081/admin/get.php/invgasolina";
+        const params = {
+          fechaInicio: this.fechaInicio,
+          fechaFin: this.fechaFin,
+          dbm: parseInt(this.dbm)
+        };
 
+        try {
+          const response = await axios.get(url, { params });
+          this.resultados = response.data.data;
+        } catch (error) {
+          console.error("Error al obtener datos de la API:", error);
+        }
+      } else {
+        this.resultados = [];
+      }
+    },
   },
   mounted() {
-    axios
-      .get("https://sistemas-oktan.com/admin/get.php/invgasolina")
-      .then((response) => {
-        this.resultados = response.data.data;
-        this.totalUtilidad = this.calcularTotalUtilidad; // Añade esta línea
-        console.log(this.resultados);
-        this.calcularTotalesPorBanco();
-        this.generateChart();
-      })
-      .catch((error) => {
-        console.error("Error al obtener datos de la API:", error);
-      });
+    this.cargarEstaciones();
   },
-  
-  methods: {
-      downloadPDF() {
-      const pdfOptions = {
-        orientation: "portrait",
-        unit: "mm",
-        format: "letter",
-      };
-
-      const doc = new jsPDF(pdfOptions);
-
-      html2canvas(this.$el, { scale: 3 })
-        .then(canvas => {
-          let imgData = canvas.toDataURL('image/jpeg', 0.1);
-
-          let imgWidth = 200;
-          let imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-          let marginLeft = (doc.internal.pageSize.getWidth() - imgWidth) / 2;
-          let marginTop = 10;
-
-          doc.addImage(imgData, 'JPEG', marginLeft, marginTop, imgWidth, imgHeight);
-
-          doc.save('informe_financiero.pdf');
-        })
-        .catch(error => {
-          console.error('Error al capturar la representación gráfica de la tabla:', error);
-        });
-    },
-    exportExcel() {
-        this.$nextTick(async () => {
-          const workbook = new ExcelJS.Workbook();
-          const worksheet = workbook.addWorksheet('Sheet1');
-          const tables = this.$el.querySelectorAll('table');
-
-          let rowIndex = 1;
-
-          const headers = this.$el.querySelectorAll('h1');
-          headers.forEach(header => {
-            const titleCell = worksheet.getCell(rowIndex, 1);
-            titleCell.value = header.textContent.trim();
-            titleCell.font = { bold: true, size: 14 }; // Hacer el título negrita y un poco más grande
-            rowIndex++;
-          });
-
-          for (let i = 0; i < tables.length; i++) {
-            const table = tables[i];
-
-            // Convertir la tabla HTML a un array de arrays
-            const data = Array.from(table.querySelectorAll('tr')).map(tr =>
-              Array.from(tr.querySelectorAll('td, th')).map(td => td.innerText)
-            );
-
-            // Agregar los datos a la hoja de Excel
-            data.forEach((row, localRowIndex) => {
-              row.forEach((value, colIndex) => {
-                const cell = worksheet.getCell(rowIndex + localRowIndex, colIndex + 1);
-                cell.value = value;
-
-                // Aplicar negrita a los encabezados de cada columna
-                if (localRowIndex === 0) {
-                  cell.font = { bold: true };
-                }
-
-                // Ajustar el ancho de las columnas específicas
-                if (colIndex === 0) {
-                  worksheet.getColumn(colIndex + 1).width = 50; // Primera columna
-                } else if (colIndex === 1 || colIndex === 2 || colIndex === 3) {
-                  worksheet.getColumn(colIndex + 1).width = 20; // todas las demas columnas
-                }
-              });
-            });
-
-            rowIndex += data.length + 1; // Dejar una fila vacía entre las tablas
-          }
-
-          // Guardar el libro de trabajo como un archivo .xlsx
-          const buffer = await workbook.xlsx.writeBuffer();
-          const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = 'informe_financieroOKTAN.xlsx';
-          a.click();
-        });
-      },
-
-
-},
-
 };
 </script>
 
 
 
+
 <style scoped>
-#chartContainer {
+.content-container {
   display: flex;
-  justify-content: center;
-  align-items: left;
+  justify-content: space-between;
+  margin-top: 50px;
 }
 
-table {
+.chart-container {
+  width: 95%;
+  height: 500px;
+  margin-left: 5px;
+  margin-right: 10px;
+}
+
+.table-container {
   width: 100%;
+}
+  /* Estilos para las etiquetas de fecha */
+  label[for="fechaInicio"], label[for="fechaFin"] {
+    font-family: "Arial", sans-serif; /* Cambiar la fuente */
+    font-size: 20px; /* Cambiar el tamaño de fuente */
+  }
+
+  table {
+  width: 95%;
   border-collapse: collapse;
   margin-top: 20px; /* Ajusta según sea necesario */
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 100px;
+  transition: transform 0.5s ease, box-shadow 0.5s ease;
+}
+
+/* Reducir el ancho de la primera columna a la mitad */
+table tr td:first-child {
+  width: 20%;
+}
+
+.table:hover {
+  transform: translateY(-0.3rem);
+  box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2);
 }
 .tabla-totales {
-  width: 700px; /* Cambia esto al ancho que desees */
+  width: 800px; /* Cambia esto al ancho que desees */
   height: auto; /* Cambia esto a la altura que desees */
-  margin-left: auto;
-  margin-right: 0;
+  margin-left: 90px;
+  margin-right: auto;
+  transition: transform 0.5s ease, box-shadow 0.5s ease;
   
   
 }
-
-
-td:first-child {
-  /* Establece el ancho de la primera columna */
-  width: 200px;  /* Ajusta este valor según tus necesidades */
+.tabla-totales:hover {
+  transform: translateY(-0.03rem)scale(1.03);
+  
+  box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.5);
 }
+
+.tabla-totales th,
+.tabla-totales td {
+  padding: 15px; /* Ajusta el relleno de las celdas según sea necesario */
+  font-size: 17px; /* Ajusta el tamaño de la fuente según sea necesario */
+}
+
+
+
 
 
 th,
@@ -261,7 +220,6 @@ th {
   border-width: thin;
   border: 1px solid #3b6e22;
   color: white;
-
   text-align: center;
   text-decoration: none;
   display: inline-block;
@@ -271,6 +229,16 @@ th {
   padding-left: 10px;
   font-family: "Roboto", sans-serif;
   font-size: 18px;
+  transition: transform 0.5s ease, box-shadow 0.5s ease, background-color 0.5s ease;
+}
+
+.boton-descargar:hover {
+  background-color: #3b6e22; /* Verde oscuro al pasar el cursor */
+  transform: translateY(0.5rem); /* Mover hacia abajo */
+}
+
+.boton-descargar:active {
+  transform: scale(1.05) translateY(0.5rem); /* Aumentar un poco el tamaño y mover hacia abajo al hacer clic */
 }
 .boton-filtrar {
   background-color: #53980d; /* Verde */
@@ -279,7 +247,6 @@ th {
   border-width: thin;
   border: 1px solid #3b6e22;
   color: white;
-
   text-align: center;
   text-decoration: none;
   display: inline-block;
@@ -288,5 +255,20 @@ th {
   margin-top: 50px;
   font-family: "Roboto", sans-serif;
   font-size: 18px;
+  transition: transform 0.5s ease, box-shadow 0.5s ease, background-color 0.5s ease;
+}
+
+.boton-filtrar:hover {
+  background-color: #3b6e22; /* Verde oscuro al pasar el cursor */
+  transform: translateY(-0.5rem); /* Desplazamiento hacia arriba */
+  box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2); /* Sombra debajo */
+}
+
+.boton-filtrar:active {
+  transform: scale(1.2); /* Aumentar un poco el tamaño al hacer clic */
+}
+.cont-total{
+  margin-top: 60px;
+  align-items: center;
 }
 </style>

@@ -65,9 +65,12 @@
       <div class="right-container" style="flex: 0 0 45%; overflow: auto;">
         <h1>Tablero de Gráficas</h1>
         <div class="chart-container">
-          <canvas id="myPieChart"></canvas>
+          <canvas id="myBarChart"></canvas>
         </div>
         <!-- Nuevo gráfico de pastel (chart2) -->
+        <div class="chart-container">
+          <canvas id="myLineChart"></canvas>
+        </div>
         <div class="cont-total">
           <h1>Total por Proveedor</h1>
             <table class="tabla-totales">
@@ -168,138 +171,249 @@ export default {
     }, {});
     this.updateChart();
   },
-    updateChart() {
-      const ctx = document.getElementById('myPieChart').getContext('2d');
+  updateChart() {
+  const ctxBar = document.getElementById('myBarChart').getContext('2d');
+  const ctxLine = document.getElementById('myLineChart').getContext('2d');
 
-      if (this.myPieChart) {
-          this.myPieChart.destroy();
+  if (this.myBarChart) {
+    this.myBarChart.destroy();
+  }
+  if (this.myLineChart) {
+    this.myLineChart.destroy();
+  }
+
+  // Colores base para las barras
+  const baseColors = [
+    'rgba(54, 162, 235, 0.3)',
+    'rgba(255, 99, 132, 0.3)',
+    'rgba(75, 192, 192, 0.3)'
+  ];
+
+  // Colores intensos al pasar el cursor
+  const hoverColors = [
+    'rgba(54, 162, 235, 0.6)',
+    'rgba(255, 99, 132, 0.6)',
+    'rgba(75, 192, 192, 0.6)'
+  ];
+
+  // Gráfico de barras
+  this.myBarChart = new Chart(ctxBar, {
+    type: 'bar',
+    data: {
+      labels: Object.keys(this.totalesPorNombre),
+      datasets: [{
+          label: 'Cargos',
+          data: Object.values(this.totalesPorNombre).map(totales => totales.cargos),
+          backgroundColor: baseColors[0],
+          hoverBackgroundColor: hoverColors[0],
+          borderColor: 'rgba(54, 162, 235, 1)',
+          borderWidth: 1
+        },
+        {
+          label: 'Abonos',
+          data: Object.values(this.totalesPorNombre).map(totales => totales.abonos),
+          backgroundColor: baseColors[1],
+          hoverBackgroundColor: hoverColors[1],
+          borderColor: 'rgba(255, 99, 132, 1)',
+          borderWidth: 1
+        },
+        {
+          label: 'Diferencia',
+          data: Object.values(this.totalesPorNombre).map(totales => totales.diferencia),
+          backgroundColor: baseColors[2],
+          hoverBackgroundColor: hoverColors[2],
+          borderColor: 'rgba(75, 192, 192, 1)',
+          borderWidth: 1
+        }
+      ]
+    },
+    options: {
+      scales: {
+        y: {
+          beginAtZero: true
+        }
       }
+    }
+  });
 
-      // Colores base para las barras
-      const baseColors = [
-          'rgba(54, 162, 235, 0.3)',
-          'rgba(255, 99, 132, 0.3)',
-          'rgba(75, 192, 192, 0.3)'
-      ];
+  // Agrupar los registros por semana
+  const dataPorSemana = this.agruparPorSemana(this.resultados);
 
-      // Colores intensos al pasar el cursor
-      const hoverColors = [
-          'rgba(54, 162, 235, 0.6)',
-          'rgba(255, 99, 132, 0.6)',
-          'rgba(75, 192, 192, 0.6)'
-      ];
-
-      const nombres = Object.keys(this.totalesPorNombre);
-      const cargos = nombres.map(nombre => this.totalesPorNombre[nombre].cargos);
-      const abonos = nombres.map(nombre => this.totalesPorNombre[nombre].abonos);
-      const diferencia = nombres.map(nombre => this.totalesPorNombre[nombre].diferencia);
-
-      this.myPieChart = new Chart(ctx, {
-          type: 'bar',
-          data: {
-              labels: nombres,
-              datasets: [{
-                      label: 'Cargos',
-                      data: cargos,
-                      backgroundColor: baseColors[0],
-                      hoverBackgroundColor: hoverColors[0],
-                      borderColor: 'rgba(54, 162, 235, 1)',
-                      borderWidth: 1
-                  },
-                  {
-                      label: 'Abonos',
-                      data: abonos,
-                      backgroundColor: baseColors[1],
-                      hoverBackgroundColor: hoverColors[1],
-                      borderColor: 'rgba(255, 99, 132, 1)',
-                      borderWidth: 1
-                  },
-                  {
-                      label: 'Diferencia',
-                      data: diferencia,
-                      backgroundColor: baseColors[2],
-                      hoverBackgroundColor: hoverColors[2],
-                      borderColor: 'rgba(75, 192, 192, 1)',
-                      borderWidth: 1
-                  }
-              ]
-          },
-          options: {
-              scales: {
-                  y: {
-                      beginAtZero: true
-                  }
-              }
-          }
-      });
+  // Gráfico de líneas
+ // Gráfico de líneas
+this.myLineChart = new Chart(ctxLine, {
+  type: 'line',
+  data: {
+    labels: dataPorSemana.map(semana => semana.fechaInicio), // Utilizar la fecha de inicio de cada semana como etiqueta
+    datasets: [{
+        label: 'Cargos',
+        data: dataPorSemana.map(semana => semana.cargos.reduce((acc, curr) => acc + curr, 0)),
+        borderColor: 'rgba(255, 99, 132, 0.3)', // Rojo
+        backgroundColor: 'transparent',
+        pointRadius: 5,
+        pointHoverRadius: 10,
+        hoverBackgroundColor: 'rgba(255, 99, 132, 0.6)',
+        fill: false
+      },
+      {
+        label: 'Abonos',
+        data: dataPorSemana.map(semana => semana.abonos.reduce((acc, curr) => acc + curr, 0)),
+        borderColor: 'rgba(54, 162, 235, 0.3)', // Azul
+        backgroundColor: 'transparent',
+        pointRadius: 5,
+        pointHoverRadius: 10,
+        hoverBackgroundColor: 'rgba(54, 162, 235, 0.6)',
+        fill: false
+      }
+    ]
+  },
+  options: {
+    plugins: {
+      title: {
+        display: true,
+        text: 'Relación Cargo-Abono',
+        font: {
+          size: 14,
+          weight: 'bold'
+        },
+        padding: {
+          top: 10,
+          bottom: 20
+        }
+      }
     },
+    scales: {
+      y: {
+        beginAtZero: true
+      }
+    }
+  }
+});
+
+},
+agruparPorSemana(resultados) {
+  // Ordenar los resultados por fecha de creación
+  const resultadosOrdenados = resultados.sort((a, b) => new Date(a.fecha_creacion) - new Date(b.fecha_creacion));
+  
+  // Obtener la fecha de inicio y fin del primer y último registro
+  const primeraFecha = new Date(resultadosOrdenados[0].fecha_creacion);
+  const ultimaFecha = new Date(resultadosOrdenados[resultadosOrdenados.length - 1].fecha_creacion);
+
+  // Inicializar el arreglo de semanas
+  const semanas = [];
+
+  // Recorrer desde la primera fecha hasta la última fecha, agrupando por semana
+  let semanaInicio = new Date(primeraFecha);
+  while (semanaInicio <= ultimaFecha) {
+    // Obtener la fecha de fin de la semana (7 días después)
+    const semanaFin = new Date(semanaInicio);
+    semanaFin.setDate(semanaFin.getDate() + 6);
+
+    // Filtrar los resultados para obtener solo los que están en esta semana
+    const resultadosSemana = resultadosOrdenados.filter(resultado => {
+      const fechaResultado = new Date(resultado.fecha_creacion);
+      return fechaResultado >= semanaInicio && fechaResultado <= semanaFin;
+    });
+
+    // Calcular los cargos y abonos de la semana
+    const cargosSemana = resultadosSemana.map(resultado => Math.abs(Number(resultado.cargo)));
+    const abonosSemana = resultadosSemana.map(resultado => Number(resultado.abono));
+
+    // Agregar los totales de la semana al arreglo de semanas
+    semanas.push({
+      fechaInicio: semanaInicio.toLocaleDateString(),
+      fechaFin: semanaFin.toLocaleDateString(),
+      cargos: cargosSemana,
+      abonos: abonosSemana
+    });
+
+    // Mover la fecha de inicio a la próxima semana
+    semanaInicio.setDate(semanaInicio.getDate() + 7);
+  }
+
+  return semanas;
+},
     async downloadPDF() {
-    let doc = new jsPDF();
-    
-    // Título del reporte con periodo de fechas
-    const titulo = `Saldos Proveedores - Estación: ${this.estaciones[this.dbm]}  \n Del (${this.fechaInicio} al ${this.fechaFin})`;
-    doc.text(titulo, doc.internal.pageSize.getWidth() / 2, 10, { align: 'center', fontStyle: 'bold' });
+        let doc = new jsPDF();
+        
+        // Título del reporte con periodo de fechas
+        const titulo = `Saldos Proveedores - Estación: ${this.estaciones[this.dbm]}  \n Del (${this.fechaInicio} al ${this.fechaFin})`;
+        doc.text(titulo, doc.internal.pageSize.getWidth() / 2, 10, { align: 'center', fontStyle: 'bold' });
 
 
-    // Tabla de Transacciones Registradas
-    const transaccionesTableData = [];
-    for (const adeudo of this.resultados) {
-      const rowData = [
-        adeudo.folio,
-        adeudo.nombre,
-        adeudo.fecha_creacion,
-        `$${parseFloat(adeudo.cargo).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`,
-        `$${parseFloat(adeudo.abono).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`,
-        `$${parseFloat(adeudo.saldo).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`
-      ];
-      transaccionesTableData.push(rowData);
-    }
+        // Tabla de Transacciones Registradas
+        const transaccionesTableData = [];
+        for (const adeudo of this.resultados) {
+          const rowData = [
+            adeudo.folio,
+            adeudo.nombre,
+            adeudo.fecha_creacion,
+            `$${parseFloat(adeudo.cargo).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`,
+            `$${parseFloat(adeudo.abono).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`,
+            `$${parseFloat(adeudo.saldo).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`
+          ];
+          transaccionesTableData.push(rowData);
+        }
 
-    // Agregar tabla de Transacciones Registradas al PDF
-    autoTable(doc, {
-      head: [['Folio-Factura', 'Nombre', 'Fecha', 'Cargo', 'Abono', 'Saldo']],
-      body: transaccionesTableData,
-      startY: 20,
-      headStyles: { fillColor: '#D3D3D3', textColor: '#000000' }
-    });
+        // Agregar tabla de Transacciones Registradas al PDF
+        autoTable(doc, {
+          head: [['Folio-Factura', 'Nombre', 'Fecha', 'Cargo', 'Abono', 'Saldo']],
+          body: transaccionesTableData,
+          startY: 20,
+          headStyles: { fillColor: '#D3D3D3', textColor: '#000000' }
+        });
 
-    // Tabla de Total por Proveedor
-    const totalesTableData = [];
-    for (const [nombre, total] of Object.entries(this.totalesPorNombre)) {
-      totalesTableData.push([nombre, `$${total.cargos.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, `$${total.abonos.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, `$${total.diferencia.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`]);
-    }
+        // Tabla de Total por Proveedor
+        const totalesTableData = [];
+        for (const [nombre, total] of Object.entries(this.totalesPorNombre)) {
+          totalesTableData.push([nombre, `$${total.cargos.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, `$${total.abonos.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, `$${total.diferencia.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`]);
+        }
 
-    // Agregar tabla de Total por Proveedor al PDF
-    autoTable(doc, {
-      head: [['Nombre', 'Cargos', 'Abonos', 'Diferencia']],
-      body: totalesTableData,
-      startY: doc.lastAutoTable.finalY + 20, // Aumentar el espacio entre las tablas
-      headStyles: { fillColor: '#D3D3D3', textColor: '#000000' }
-    });
+        // Agregar tabla de Total por Proveedor al PDF
+        autoTable(doc, {
+          head: [['Nombre', 'Cargos', 'Abonos', 'Diferencia']],
+          body: totalesTableData,
+          startY: doc.lastAutoTable.finalY + 20, // Aumentar el espacio entre las tablas
+          headStyles: { fillColor: '#D3D3D3', textColor: '#000000' }
+        });
 
-    // Footer del PDF
-    const totalPages = doc.internal.getNumberOfPages();
-    for (let i = 1; i <= totalPages; i++) {
-      doc.setPage(i);
-      doc.setFontSize(10);
-      doc.text('Página ' + i + ' de ' + totalPages, doc.internal.pageSize.getWidth() - 80, doc.internal.pageSize.getHeight() - 2);
-    }
+        // Footer del PDF
+        const totalPages = doc.internal.getNumberOfPages();
+        for (let i = 1; i <= totalPages; i++) {
+          doc.setPage(i);
+          doc.setFontSize(10);
+          doc.text('Página ' + i + ' de ' + totalPages, doc.internal.pageSize.getWidth() - 80, doc.internal.pageSize.getHeight() - 2);
+        }
 
-    // Agregar el gráfico al final del PDF
-    const canvas = document.getElementById('myPieChart');
-    const imageData = canvas.toDataURL('image/png');
-    const imgWidth = 110; // Ancho deseado para la imagen
-    const imgHeight = 60; // Altura deseada para la imagen
-    const positionX = doc.internal.pageSize.getWidth() - imgWidth - 10; // Alineado a la derecha con un pequeño margen
-    const positionY = doc.internal.pageSize.getHeight() - imgHeight - 10; // Posición vertical desde la parte inferior del PDF
-    doc.addImage(imageData, 'PNG', positionX, positionY, imgWidth, imgHeight);
+        // Agregar el gráfico al final del PDF
+        const canvas = document.getElementById('myLineChart');
+        const imageData = canvas.toDataURL('image/png');
+        const imgWidth = 110; // Ancho deseado para la imagen
+        const imgHeight = 60; // Altura deseada para la imagen
+        let positionX = doc.internal.pageSize.getWidth() - imgWidth - 10; // Alineado a la derecha con un pequeño margen
+        let positionY = doc.internal.pageSize.getHeight() - imgHeight - 10; // Posición vertical desde la parte inferior del PDF
 
-    // Guardar el PDF
-    doc.save('Reporte_Saldos_Proveedores.pdf');
+        // Calcular el espacio restante en la página actual
+        const espacioRestante = doc.internal.pageSize.getHeight() - positionY;
+
+        // Verificar si hay suficiente espacio para la imagen
+        if (espacioRestante < imgHeight) {
+            // Si no hay suficiente espacio, ir a la siguiente página
+            doc.addPage();
+            // Ajustar la posición Y para colocar la imagen en la parte superior de la página
+            positionY = 10;
+        }
+
+        // Agregar el gráfico al PDF
+        doc.addImage(imageData, 'PNG', positionX, positionY, imgWidth, imgHeight);
+
+        // Guardar el PDF
+        doc.save('Reporte_Saldos_Proveedores.pdf');
     },
+
 
     exportExcel() {
-  this.$nextTick(async () => {
+    this.$nextTick(async () => {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Sheet1');
 
@@ -358,7 +472,6 @@ export default {
     a.click();
   });
 },
-
 
 
   },
