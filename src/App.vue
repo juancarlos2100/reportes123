@@ -7,7 +7,7 @@
     <router-link to="/reporte3">Saldos Proveedores</router-link>|
     <router-link to="/reporte4">Cortes</router-link>|
     <router-link to="/reporte5">Clientes por Cobrar</router-link>|
-    <router-link to="/reporte6">Inv Gasolina</router-link>|
+    <router-link to="/reporte6">Ventas Periodo</router-link>|
     <router-link to="/reporte7">Inv Aceites</router-link>|
     <router-link to="/reporte8">Reporte9</router-link>|
     <router-link to="/reporte9">DESGLOSE</router-link>|

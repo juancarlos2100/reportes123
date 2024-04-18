@@ -1,67 +1,66 @@
 <template>
-  <div id="resultado">
+  <div class="container">
     <header>
       <img class="imagen-encabezado" src="@/assets/logok.png" alt="Descripción de la imagen">
     </header>
     <h1>Reporte Operativo</h1>
-    <h2> Inventario Gasolina</h2>
+    <h2>Ventas Periodo</h2>
     <form @submit.prevent="filtrarDatos">
       <label for="estacion" style="font-size: 24px; font-weight: bold; padding-right: 10px; font-family: Arial, sans-serif;">Estación:</label>
-        <select id="estacion" v-model="dbm" style="width: 400px; height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;">
-          <option v-for="(nombre, id) in estaciones" :key="id" :value="id">{{ nombre }}</option>
-        </select>
-      <label for="fechaInicio" style="font-size: 24px; font-weight: bold; padding-right: 10px; font-family: Arial, sans-serif;">Fecha de Inicio:</label>
-        <input type="date" v-model="fechaInicio" style="width: 400px; height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;">
-        <label for="fechaFin" style="font-size: 24px; font-weight: bold; padding-right: 10px; font-family: Arial, sans-serif;">Fecha de Fin:</label>
-        <input type="date" v-model="fechaFin" style="width: 400px; height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;">
-
+      <select id="estacion" v-model="dbm" style="width: 400px; height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;">
+        <option v-for="(nombre, id) in estaciones" :key="id" :value="id">{{ nombre }}</option>
+      </select>
+      <label for="turnoInicio" style="font-size: 24px; font-weight: bold; padding-right: 10px; font-family: Arial, sans-serif;">Turno Inicial:</label>
+      <input type="number" v-model="turnoInicio" style="width: 400px; height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;">
+      <label for="turnoFin" style="font-size: 24px; font-weight: bold; padding-right: 10px; font-family: Arial, sans-serif;">Turno Final:</label>
+      <input type="number" v-model="turnoFin" style="width: 400px; height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;">
       <button class="boton-filtrar" type="submit">Filtrar</button>
     </form>
-    <button class="boton-descargar" @click="downloadPDF">Descargar PDF</button>
-    <button class="boton-descargar" @click="downloadPDF">Descargar XLS</button>
+
+    <!-- Tabla para los productos individuales -->
     <table>
       <thead>
         <tr>
-          <th>id_tanque</th>
-          <th>nombre</th>
-          <th>fin_volumen</th>
-          <th>precio_venta</th>
-          <th>precio_compra</th>
-          <th>total_compra</th>
-          <th>total_venta</th>
-          <th>utilidad</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="(adeudo, index) in resultados" :key="index">
-          <td>{{ adeudo['id_tanque'] }}</td>
-          <td>{{ adeudo['nombre'] }}</td>
-          <td>{{ adeudo['fin_volumen'] }}</td>
-          <td>{{ adeudo['precio_venta'] }}</td>
-          <td>${{ adeudo['precio_compra'] }}</td>
-          <td>${{ parseFloat(adeudo['total_compra']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
-          <td>${{ parseFloat(adeudo['total_venta']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
-          <td>${{ parseFloat(adeudo['utilidad']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
-        </tr>
-      </tbody>
-    </table>
-    <br>
-    <table class="tabla-totales">
-      <thead>
-        <tr>
-          <th>nombre</th>
-          <th>Litros</th>
+          <th>Producto</th>
+          <th>Inicio</th>
+          <th>Compras</th>
+          <th>Jarras</th>
+          <th>Ventas</th>
           <th>Precio</th>
           <th>Importe</th>
+          <th>Fin</th>
+          <th>Fin calculado</th>
+          <th>Diferencia</th>
+          <th>Porcentaje</th>
         </tr>
-        
       </thead>
       <tbody>
-        <tr v-for="(adeudo, index) in resultados" :key="index">
-          <td>{{ adeudo['nombre'] }}</td>
-          <td>{{ parseFloat(adeudo['fin_volumen']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
-          <td>{{ adeudo['precio_compra'] }}</td>
-          <td>${{ parseFloat(adeudo['total_compra']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
+        <tr v-for="(adeudo, index) in productosIndividuales" :key="index">
+          <td>{{ adeudo['producto'] }}</td>
+          <td>${{ parseFloat(adeudo['inicio']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
+          <td>${{ parseFloat(adeudo['compras']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
+          <td>${{ parseFloat(adeudo['jarras']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
+          <td>${{ parseFloat(adeudo['ventas']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
+          <td>${{ parseFloat(adeudo['precio']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
+          <td>${{ parseFloat(adeudo['importe']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
+          <td>${{ parseFloat(adeudo['fin']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
+          <td>${{ parseFloat(adeudo['fin_calculado']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
+          <td>${{ parseFloat(adeudo['diferencia']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
+          <td>{{ parseFloat(adeudo['porcentaje']).toFixed(2) }}%</td>
+        </tr>
+        <!-- Nueva fila para mostrar las sumas totales -->
+        <tr>
+          <td>Total</td>
+          <td>${{ sumarColumna('inicio').toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
+          <td>${{ sumarColumna('compras').toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
+          <td>${{ sumarColumna('jarras').toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
+          <td>${{ sumarColumna('ventas').toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
+          <td>{{ calcularPromedioPrecio() }}</td>
+          <td>${{ sumarColumna('importe').toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
+          <td>${{ sumarColumna('fin').toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
+          <td>${{ sumarColumna('fin_calculado').toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
+          <td>${{ sumarColumna('diferencia').toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
+          <td>{{ calcularPorcentajePromedio() }}</td>
         </tr>
       </tbody>
     </table>
@@ -75,12 +74,17 @@ export default {
   data() {
     return {
       resultados: [],
-      fechaInicio: null,
-      fechaFin: null,
+      selectedEstacion: null,
+      mostrarResultados: false,
+      productosIndividuales: [],
+      total: {},
       dbm: null,
+      turnoInicio: null,
+      turnoFin: null,
       estaciones: {},
     };
   },
+
   methods: {
     async cargarEstaciones() {
       const url = 'http://gasserver.dyndns.org:8081/admin/get.php/estaciones';
@@ -95,28 +99,49 @@ export default {
       }
     },
     async filtrarDatos() {
-      if (this.fechaInicio && this.fechaFin && this.dbm) {
-        const url = "http://gasserver.dyndns.org:8081/admin/get.php/invgasolina";
+      if (this.turnoInicio && this.turnoFin && this.dbm) {
+        const turnoInicioInt = parseInt(this.turnoInicio);
+        const turnoFinInt = parseInt(this.turnoFin);
+        const url = `http://gasserver.dyndns.org:8081/admin/get.php/periodoturno`;
+
         const params = {
-          fechaInicio: this.fechaInicio,
-          fechaFin: this.fechaFin,
+          turnoInicio: turnoInicioInt,
+          turnoFin: turnoFinInt,
           dbm: parseInt(this.dbm)
         };
 
         try {
           const response = await axios.get(url, { params });
-          this.resultados = response.data.data;
+          this.productosIndividuales = response.data.data;
+
+          // Buscar el total y asignarlo
+          this.total = this.productosIndividuales.find(item => item.id === 'total');
+          // Filtrar los productos individuales
+          this.productosIndividuales = this.productosIndividuales.filter(item => item.id !== 'total');
         } catch (error) {
           console.error("Error al obtener datos de la API:", error);
         }
       } else {
-        this.resultados = [];
+        console.error("Por favor, selecciona una estación y proporciona los turnos de inicio y fin.");
       }
     },
+    sumarColumna(columna) {
+      return this.productosIndividuales.reduce((total, adeudo) => {
+        return total + parseFloat(adeudo[columna]);
+      }, 0);
+    },
+    calcularPromedioPrecio() {
+      const totalPrecio = this.sumarColumna('precio');
+      return totalPrecio / this.productosIndividuales.length;
+    },
+    calcularPorcentajePromedio() {
+      const totalPorcentaje = this.sumarColumna('porcentaje');
+      return totalPorcentaje / this.productosIndividuales.length;
+    }
   },
   mounted() {
     this.cargarEstaciones();
-  },
+  }
 };
 </script>
 

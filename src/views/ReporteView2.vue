@@ -8,18 +8,20 @@
     <div> 
       <form @submit.prevent="filtrarDatos">
         <label for="estacion" style="font-size: 24px; font-weight: bold; padding-right: 10px; font-family: Arial, sans-serif;">Estación:</label>
-        <select id="estacion" v-model="dbm" @change="cargarBancos" style="width: 400px; height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;">
+        <select id="estacion" v-model="dbm" @change="cargarBancos" style="width: 300px; height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;">
           <option v-for="(nombre, id) in estaciones" :key="id" :value="id">{{ nombre }}</option>
         </select>
         <label for="banco" style="font-size: 24px; font-weight: bold; padding-right: 10px; font-family: Arial, sans-serif;">Banco:</label>
-        <select id="banco" v-model="bancoSeleccionado" style="width: 400px; height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;">
+        <select id="banco" v-model="bancoSeleccionado" style="width: 300px; height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;">
           <option value="">Todos</option>
           <option v-for="(nombre, id) in bancos" :key="id" :value="id">{{ nombre }}</option>
         </select>
         <label for="fechaInicio" style="font-size: 24px; font-weight: bold; padding-right: 10px; font-family: Arial, sans-serif;">Fecha de Inicio:</label>
         <input type="date" v-model="fechaInicio" maxlength="10" style="margin-right:10px; width: 150px;height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;">
+        <input type="time" v-model="horaInicio" style="width: 200px;height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;">
         <label for="fechaFin" style="font-size: 24px; font-weight: bold; padding-right: 10px; font-family: Arial, sans-serif;">Fecha de Fin:</label>
         <input type="date" v-model="fechaFin" maxlength="10" style="margin-right:10px; width: 150px; height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;">
+        <input type="time" v-model="horaFin" style="width: 200px;height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;">
         <button class="boton-filtrar" type="submit">Filtrar</button>
       </form>
       <button class="boton-descargar" @click="downloadPDF">Descargar PDF</button>
@@ -34,6 +36,7 @@
           <thead>
             <tr>
               <th>Banco</th>
+              <th>id</th>
               <th>Descripcion</th>
               <th>Movimiento</th>
               <th>Fecha Contable</th>
@@ -45,6 +48,7 @@
           <tbody v-if="mostrarResultados">
             <tr v-for="(adeudo, index) in resultados" :key="index">
               <td>{{ adeudo['banco'] }}</td>
+              <td>{{ adeudo['id_transaccion'] }}</td>
               <td>{{ adeudo['descripcion'].length > 45 ? adeudo['descripcion'].slice(0, 45) + '...' : adeudo['descripcion'] }}</td>
               <td><strong>{{ adeudo['id_tipo'] === '1' ? 'Abonos' : (adeudo['id_tipo'] === '2' ? 'Cargos' : 'otro') }}</strong></td>
               <td>{{ adeudo['fecha_contable'] }}</td>
@@ -156,6 +160,8 @@ export default {
       correlacion: {},
       segmentosClientes: {},
       mostrarAlertas: false,
+      horaInicio: '',
+    horaFin: ''
     };
   },
 
@@ -191,10 +197,15 @@ export default {
     async filtrarDatos() {
       if (this.fechaInicio && this.fechaFin && this.dbm) {
         const url = `http://gasserver.dyndns.org:8081/admin/get.php/transaccionesbanco`;
-        const fechaFinConHora = `${this.fechaFin}T12:00:00`;
+        
+        // Concatenar la fecha de inicio y la hora de inicio
+        const fechaInicioConHora = `${this.fechaInicio}T${this.horaInicio}:00`;
+        
+        // Concatenar la fecha de fin y la hora de fin
+        const fechaFinConHora = `${this.fechaFin}T${this.horaFin}:00`;
 
         const params = {
-          fechaInicio: this.fechaInicio,
+          fechaInicio: fechaInicioConHora,
           fechaFin: fechaFinConHora,
           dbm: parseInt(this.dbm)
         };
@@ -214,6 +225,7 @@ export default {
         console.error("Por favor, selecciona una estación y proporciona las fechas de inicio y fin.");
       }
     },
+
       filtrarPorBanco() {
       if (this.bancoSeleccionado) {
         this.resultados = this.resultadosOriginales.filter(adeudo => adeudo.id_cuenta === this.bancoSeleccionado);
