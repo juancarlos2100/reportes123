@@ -167,7 +167,7 @@ export default {
 
   methods: {
     async cargarEstaciones() {
-      const url = 'http://gasserver.dyndns.org:8081/admin/get.php/estaciones';
+      const url = 'http://192.168.1.68/admin/get.php/estaciones';
       try {
         const response = await axios.get(url);
         this.estaciones = response.data.data.reduce((acc, item) => {
@@ -180,7 +180,7 @@ export default {
     },
     async cargarBancos() {
       if (this.dbm) {
-        const url = `http://gasserver.dyndns.org:8081/admin/get.php/listabanco?dbm=${this.dbm}`;
+        const url = `http://192.168.1.68/admin/get.php/listabanco?dbm=${this.dbm}`;
         try {
           const response = await axios.get(url);
           this.bancos = response.data.data.reduce((acc, item) => {
@@ -196,6 +196,7 @@ export default {
     },
     async filtrarDatos() {
       if (this.fechaInicio && this.fechaFin && this.dbm) {
+<<<<<<< HEAD
         const url = `http://gasserver.dyndns.org:8081/admin/get.php/transaccionesbanco`;
         
         // Concatenar la fecha de inicio y la hora de inicio
@@ -203,6 +204,10 @@ export default {
         
         // Concatenar la fecha de fin y la hora de fin
         const fechaFinConHora = `${this.fechaFin}T${this.horaFin}:00`;
+=======
+        const url = `http://192.168.1.68/admin/get.php/transaccionesbanco`;
+        const fechaFinConHora = `${this.fechaFin}T12:00:00`;
+>>>>>>> 3deaf386b0250f4c1c9a8a723dfa8d62a3b516c3
 
         const params = {
           fechaInicio: fechaInicioConHora,
