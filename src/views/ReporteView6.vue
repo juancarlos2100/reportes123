@@ -1,5 +1,5 @@
 <template>
-  <div class="container">
+  <div :class="{ 'dark-mode': isDarkMode }" class="container">
     <header>
       <img class="imagen-encabezado" src="@/assets/logok.png" alt="Descripción de la imagen">
     </header>
@@ -7,19 +7,19 @@
     <h2>Ventas Periodo</h2>
     <form @submit.prevent="filtrarDatos">
       <label for="estacion" style="font-size: 24px; font-weight: bold; padding-right: 10px; font-family: Arial, sans-serif;">Estación:</label>
-      <select id="estacion" v-model="dbm" style="width: 400px; height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;">
+      <select id="estacion" v-model="dbm" class="form-select" :class="{ 'dark-mode-select': isDarkMode }" style="width: 400px; height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;">
         <option v-for="(nombre, id) in estaciones" :key="id" :value="id">{{ nombre }}</option>
       </select>
       <label for="turnoInicio" style="font-size: 24px; font-weight: bold; padding-right: 10px; font-family: Arial, sans-serif;">Turno Inicial:</label>
-      <input type="number" v-model="turnoInicio" style="width: 400px; height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;">
+      <input type="number" v-model="turnoInicio" class="form-select" :class="{ 'dark-mode-select': isDarkMode }" style="width: 400px; height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;">
       <label for="turnoFin" style="font-size: 24px; font-weight: bold; padding-right: 10px; font-family: Arial, sans-serif;">Turno Final:</label>
-      <input type="number" v-model="turnoFin" style="width: 400px; height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;">
+      <input type="number" v-model="turnoFin" class="form-select" :class="{ 'dark-mode-select': isDarkMode }" style="width: 400px; height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;">
       <button class="boton-filtrar" type="submit">Filtrar</button>
     </form>
     <button class="boton-descargar" @click="downloadPDF">Descargar PDF</button>
 
     <!-- Tabla para los productos individuales -->
-    <table>
+    <table :class="{ 'table': !isDarkMode, 'dark-mode-table': isDarkMode }">
       <thead>
         <tr>
           <th>Producto</th>
@@ -51,16 +51,16 @@
         </tr>
         <!-- Nueva fila para mostrar las sumas totales -->
         <tr>
-          <td>Total</td>
-          <td>{{ sumarColumna('inicio').toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
-          <td>{{ sumarColumna('compras').toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
-          <td>{{ sumarColumna('jarras').toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
-          <td>${{ sumarColumna('ventas').toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
+          <td><strong>Total</strong></td>
+          <td><strong>{{ sumarColumna('inicio').toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
+          <td><strong>{{ sumarColumna('compras').toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
+          <td><strong>{{ sumarColumna('jarras').toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
+          <td><strong>${{ sumarColumna('ventas').toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
           <td>. </td>
-          <td>${{ sumarColumna('importe').toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
-          <td>{{ sumarColumna('fin').toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
-          <td>{{ sumarColumna('fin_calculado').toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
-          <td>{{ sumarColumna('diferencia').toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
+          <td><strong>{{ sumarColumna('ventas').toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
+          <td><strong>{{ sumarColumna('fin').toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
+          <td><strong>{{ sumarColumna('fin_calculado').toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
+          <td><strong>{{ sumarColumna('diferencia').toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
           <td>.</td>
         </tr>
       </tbody>
@@ -76,6 +76,7 @@ import autoTable from 'jspdf-autotable';
 export default {
   data() {
     return {
+      isDarkMode: true, // Variable para controlar el modo oscuro
       resultados: [],
       selectedEstacion: null,
       mostrarResultados: false,
@@ -338,5 +339,36 @@ th {
 .cont-total{
   margin-top: 60px;
   align-items: center;
+}
+.dark-mode {
+  background-color: #333; /* Color de fondo oscuro */
+  color: #fff; /* Color de texto blanco */
+  height: 100vh;
+}
+.dark-mode-select,
+.dark-mode-input {
+  background-color: #444; /* Color de fondo oscuro para select e input */
+  color: #fff; /* Color de texto blanco para select e input */
+}
+.dark-mode-table {
+  color: #fff; /* Color del texto en modo oscuro */
+  background-color: #333; /* Color de fondo en modo oscuro */
+  border-collapse: collapse; /* Colapsar los bordes de la tabla */
+  width: 95%; /* Ancho de la tabla */
+  margin-top: 20px; /* Margen superior */
+  margin-bottom: 8px; /* Margen inferior */
+  margin-left: 20px;
+}
+
+.dark-mode-table th,
+.dark-mode-table td {
+  border: 1px solid #ddd; /* Borde de las celdas en modo oscuro */
+  padding: 8px; /* Espaciado interno de las celdas */
+  text-align: left; /* Alineación del texto en las celdas */
+}
+
+.dark-mode-table th {
+  background-color: #555; /* Color de fondo de los encabezados en modo oscuro */
+  color: #fff; /* Color del texto de los encabezados en modo oscuro */
 }
 </style>

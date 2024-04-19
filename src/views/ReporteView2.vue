@@ -1,38 +1,64 @@
 <template>
-  <div class="container">
+  <div :class="{ 'dark-mode': isDarkMode }" class="container">
     <header>
       <img class="imagen-encabezado" src="@/assets/logok.png" alt="Logotipo de oktan">
     </header>
     <h1>Reporte Operativo</h1>
     <h2>Transacciones Bancos</h2>
-    <div> 
+    <div>
       <form @submit.prevent="filtrarDatos">
         <label for="estacion" style="font-size: 24px; font-weight: bold; padding-right: 10px; font-family: Arial, sans-serif;">Estación:</label>
-        <select id="estacion" v-model="dbm" @change="cargarBancos" style="width: 300px; height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;">
+        <select id="estacion" v-model="dbm" @change="cargarBancos" class="form-select" :class="{ 'dark-mode-select': isDarkMode }" style="width: 300px; height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;">
+          <option value="" disabled selected>Seleccione una estación</option>
           <option v-for="(nombre, id) in estaciones" :key="id" :value="id">{{ nombre }}</option>
         </select>
+
         <label for="banco" style="font-size: 24px; font-weight: bold; padding-right: 10px; font-family: Arial, sans-serif;">Banco:</label>
-        <select id="banco" v-model="bancoSeleccionado" style="width: 300px; height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;">
-          <option value="">Todos</option>
+        <select id="banco" v-model="bancoSeleccionado" class="form-select" :class="{ 'dark-mode-select': isDarkMode }" style="width: 300px; height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;" :disabled="!dbm">
+          <option value="" disabled selected>Seleccione un banco</option>
           <option v-for="(nombre, id) in bancos" :key="id" :value="id">{{ nombre }}</option>
         </select>
+
         <label for="fechaInicio" style="font-size: 24px; font-weight: bold; padding-right: 10px; font-family: Arial, sans-serif;">Fecha de Inicio:</label>
-        <input type="date" v-model="fechaInicio" maxlength="10" style="margin-right:10px; width: 150px;height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;">
-        <input type="time" v-model="horaInicio" style="width: 200px;height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;">
+        <input type="date" v-model="fechaInicio" maxlength="10" class="form-select" :class="{ 'dark-mode-select': isDarkMode }" style="margin-right:10px; width: 150px;height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;" :disabled="!bancoSeleccionado">
+
+        <input type="time" v-model="horaInicio" class="form-select" :class="{ 'dark-mode-select': isDarkMode }" style="width: 200px;height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;" :disabled="!bancoSeleccionado">
+
         <label for="fechaFin" style="font-size: 24px; font-weight: bold; padding-right: 10px; font-family: Arial, sans-serif;">Fecha de Fin:</label>
-        <input type="date" v-model="fechaFin" maxlength="10" style="margin-right:10px; width: 150px; height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;">
-        <input type="time" v-model="horaFin" style="width: 200px;height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;">
-        <button class="boton-filtrar" type="submit">Filtrar</button>
+        <input type="date" v-model="fechaFin" maxlength="10" class="form-select" :class="{ 'dark-mode-select': isDarkMode }" style="margin-right:10px; width: 150px; height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;" :disabled="!horaInicio">
+
+        <input type="time" v-model="horaFin" class="form-select" :class="{ 'dark-mode-select': isDarkMode }"  style="width: 200px;height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;" :disabled="!horaInicio">
+
+        <button class="boton-filtrar" type="submit" :disabled="!horaFin">Filtrar</button>
       </form>
-      <button class="boton-descargar" @click="downloadPDF">Descargar PDF</button>
-      <button class="boton-descargar" @click="exportExcel">Descargar XLS</button>
+
+      <button class="boton-descargar" @click="downloadPDF" :disabled="!horaFin">Descargar PDF</button>
+      <button class="boton-descargar" @click="exportExcel" :disabled="!horaFin">Descargar XLS</button>
     </div>
+
+
 
     <div class="container" style="display: flex; height: 100%;">
       <!-- Lado izquierdo -->
       <div class="left-container" style="flex: 0 0 55%; overflow: auto;">
         <h1>Transacciones Registradas</h1>
-        <table class="table">
+          <!-- Nueva tabla para mostrar el Saldo Anterior -->
+          <table :class="{ 'saldo-anterior-table': !isDarkMode, 'dark-mode-saldo-anterior-table': isDarkMode }" style="margin-bottom: 2px; text-align: right;">
+          <thead>
+            <tr>
+              <th style="text-align: right;">Saldo Anterior</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-if="resultados.length > 0"> <!-- Verificamos si hay resultados en la tabla principal -->
+              <td style="text-align: right;">${{ (resultados[0].saldo - resultados[0].monto).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
+            </tr>
+            <tr v-else>
+              <td colspan="2">No hay transacciones registradas</td>
+            </tr>
+          </tbody>
+        </table>
+        <table :class="{ 'table': !isDarkMode, 'dark-mode-table': isDarkMode }">
           <thead>
             <tr>
               <th>Banco</th>
@@ -72,23 +98,9 @@
       <canvas id="polarChart"></canvas>
     </div>
     <div class="chart-container">
-      <canvas id="lineChart"></canvas>
-              <!-- Tu contenido existente -->
-        <!-- Alerta cuando la deuda al banco supera el 50% -->
-        <h1 v-if="mostrarAlertas && porcentajeCuentaNoPagada > 50" style="color: red;">
-        Los cargos superan en mas de 50% a los abonos en el periodo seleccionado
-        </h1>
-    
-        <!-- Alerta cuando la deuda al banco supera el 15% -->
-        <h1 v-if="mostrarAlertas && porcentajeCuentaNoPagada > 15 && porcentajeCuentaNoPagada <= 50" style="color: orange;">
-          los catgos superan en mas de 15% a los abonos en el periodo seleccionado
-        </h1>
+      <canvas id="barChart"></canvas>
 
-        <!-- Alerta cuando la deuda al banco no supera el 15% -->
-        <h1 v-if="mostrarAlertas && porcentajeCuentaNoPagada <= 15" style="color: green;">
-          La proporcion de cargos y abonos es similar 
-        </h1>
-      <div>
+    <div>
   </div>
     </div>
     <div class="cont-total">
@@ -113,8 +125,8 @@
         <thead>
           <tr>
             <th>Banco</th>
-            <th>Cargos</th>
             <th>Abonos</th>
+            <th>Cargos</th>
             <th>Diferencia</th>
           </tr>
         </thead>
@@ -143,6 +155,7 @@ import autoTable from 'jspdf-autotable';
 export default {
   data() {
     return {
+      isDarkMode: true, // Variable para controlar el modo oscuro
       resultados: [],
       selectedEstacion: null,
       mostrarResultados: false,
@@ -166,6 +179,7 @@ export default {
   },
 
   methods: {
+
     async cargarEstaciones() {
       const url = 'http://gasserver.dyndns.org:8081/admin/get.php/estaciones';
       try {
@@ -283,7 +297,7 @@ export default {
 
 updateChart() {
   const ctxPolar = document.getElementById('polarChart').getContext('2d');
-  const ctxLine = document.getElementById('lineChart').getContext('2d');
+  const ctxBar = document.getElementById('barChart').getContext('2d');
 
   if (this.barChart) {
     this.barChart.destroy();
@@ -291,22 +305,40 @@ updateChart() {
   if (this.polarChart) {
     this.polarChart.destroy();
   }
-  if (this.lineChart) {
-    this.lineChart.destroy();
-  }
 
-  // Colores base para las barras
-  const baseColors = [
+  // Colores base para las barras del gráfico polar
+  const baseColorsPolar = [
     'rgba(54, 162, 235, 0.3)',
     'rgba(255, 99, 132, 0.3)',
     'rgba(75, 192, 192, 0.3)'
   ];
 
-  // Colores intensos al pasar el cursor
-  const hoverColors = [
+  // Colores intensos al pasar el cursor para el gráfico polar
+  const hoverColorsPolar = [
     'rgba(54, 162, 235, 0.6)',
     'rgba(255, 99, 132, 0.6)',
     'rgba(75, 192, 192, 0.6)'
+  ];
+
+  // Colores base para las barras del gráfico de barras
+  const baseColorsBar = [
+    'rgba(255, 206, 86, 0.3)', // Amarillo
+    'rgba(153, 102, 255, 0.3)', // Morado
+    'rgba(255, 159, 64, 0.3)'   // Naranja
+  ];
+
+  // Colores intensos al pasar el cursor para el gráfico de barras
+  const hoverColorsBar = [
+    'rgba(255, 206, 86, 0.6)', // Amarillo
+    'rgba(153, 102, 255, 0.6)', // Morado
+    'rgba(255, 159, 64, 0.6)'   // Naranja
+  ];
+
+  // Colores de los bordes para el gráfico polar
+  const borderColorsPolar = [
+    'rgba(255, 255, 255, 1)', // Blanco
+    'rgba(255, 255, 255, 1)', // Blanco
+    'rgba(255, 255, 255, 1)'  // Blanco
   ];
 
   // Gráfico polar
@@ -321,21 +353,24 @@ updateChart() {
             Object.values(this.totalesPorBanco).reduce((acc, curr) => acc + curr.cargos, 0),
             Object.values(this.totalesPorBanco).reduce((acc, curr) => acc + curr.saldoFinal, 0)
           ],
-          backgroundColor: baseColors,
-          hoverBackgroundColor: hoverColors
+          backgroundColor: baseColorsPolar,
+          hoverBackgroundColor: hoverColorsPolar,
+          borderColor: borderColorsPolar, // Establecer los colores de borde
+          borderWidth: 1 // Establecer el ancho de los bordes
         }
       ]
     },
     options: {
       plugins: {
         title: {
-          display: true,
-          text: 'Proporción de cargos y abonos',
-          font: {
+        display: true,
+        text: 'Proporción de cargos y abonos (Polar)',
+        font: {
             size: 14,
-            weight: 'bold'
-          }
-        },
+            weight: 'bold',
+            color: this.isDarkMode ? 'rgba(255, 255, 255, 0.6)' : 'rgba(0, 0, 0, 0.6)'
+        }
+      },
         legend: {
           labels: {
             font: {
@@ -344,51 +379,61 @@ updateChart() {
             }
           }
         }
+      },
+      scales: {
+        r: {
+          grid: {
+            color: this.isDarkMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)' // Color de la cuadrícula de fondo
+          }
+        }
       }
     }
   });
 
-  // Agrupar los registros por semana
-  const dataPorSemana = this.agruparPorSemana(this.resultados);
-
-  // Colores base para las líneas
-  const lineColors = [
-    'rgba(255, 99, 132, 0.3)', // Rojo
-    'rgba(54, 162, 235, 0.3)'   // Azul
-  ];
-
-  // Colores intensos al pasar el cursor
-  const hoverLineColors = [
-    'rgba(255, 99, 132, 0.6)', // Rojo
-    'rgba(54, 162, 235, 0.6)'   // Azul
-  ];
-
-  // Gráfico de líneas
-  this.lineChart = new Chart(ctxLine, {
-    type: 'line',
+  // Gráfico de barras
+  this.barChart = new Chart(ctxBar, {
+    type: 'bar',
     data: {
-      labels: dataPorSemana.map(semana => semana.fechaInicio), // Utilizar la fecha de inicio de cada semana como etiqueta
+      labels: ['Cargos', 'Abonos', 'Diferencia'],
       datasets: [
         {
-          label: 'Cargos',
-          data: dataPorSemana.map(semana => semana.cargos.reduce((acc, curr) => acc + curr, 0)),
-          borderColor: lineColors[0], // Rojo
-          pointBackgroundColor: hoverLineColors[0], // Puntos en color más intenso al pasar el cursor
-          fill: false
-        },
-        {
-          label: 'Abonos',
-          data: dataPorSemana.map(semana => semana.abonos.reduce((acc, curr) => acc + curr, 0)),
-          borderColor: lineColors[1], // Azul
-          pointBackgroundColor: hoverLineColors[1], // Puntos en color más intenso al pasar el cursor
-          fill: false
+          data: [
+            Object.values(this.totalesPorBanco).reduce((acc, curr) => acc + curr.abonos, 0),
+            Object.values(this.totalesPorBanco).reduce((acc, curr) => acc + curr.cargos, 0),
+            Object.values(this.totalesPorBanco).reduce((acc, curr) => acc + curr.saldoFinal, 0)
+          ],
+          backgroundColor: baseColorsBar,
+          hoverBackgroundColor: hoverColorsBar,
+          borderColor: 'rgba(255, 255, 255, 1)', // Establecer el color de los bordes como blanco
+          borderWidth: 1 // Establecer el ancho de los bordes
         }
       ]
     },
     options: {
+      plugins: {
+        title: {
+        display: true,
+        text: 'Proporción de cargos y abonos (Barras)',
+        font: {
+            size: 14,
+            weight: 'bold',
+            color: this.isDarkMode ? 'rgba(255, 255, 255, 0.6)' : 'rgba(0, 0, 0, 0.6)'
+        }
+      },
+        legend: {
+          display: false
+        }
+      },
       scales: {
+        x: {
+          grid: {
+            color: this.isDarkMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)' // Color de la cuadrícula de fondo
+          }
+        },
         y: {
-          beginAtZero: true
+          grid: {
+            color: this.isDarkMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)' // Color de la cuadrícula de fondo
+          }
         }
       }
     }
@@ -396,73 +441,10 @@ updateChart() {
 },
 
 
-        // Función para agrupar los registros por semana
-      agruparPorSemana(resultados) {
-        const dataPorSemana = [];
-        let semanaActual = null;
-        let semanaData = null;
-        let totalDiasUltimaSemana = 0; // Variable para almacenar el número de días en la última semana
 
-        resultados.forEach(resultado => {
-          const fecha = new Date(resultado.fecha_contable);
-          const semana = this.obtenerSemana(fecha);
 
-          if (semana !== semanaActual) {
-            // Iniciar nueva semana
-            semanaActual = semana;
-            semanaData = {
-              fechaInicio: this.obtenerFechaInicioSemana(fecha),
-              cargos: [],
-              abonos: []
-            };
-            dataPorSemana.push(semanaData);
-          }
+      
 
-          // Agregar cargos y abonos a la semana actual
-          if (resultado.id_tipo === '1') {
-            semanaData.cargos.push(parseFloat(resultado.monto));
-            semanaData.abonos.push(0); // Insertar 0 para mantener la integridad de los datasets
-          } else if (resultado.id_tipo === '2') {
-            semanaData.abonos.push(parseFloat(resultado.monto));
-            semanaData.cargos.push(0); // Insertar 0 para mantener la integridad de los datasets
-          }
-
-          // Actualizar el número de días en la última semana
-          if (semana === this.obtenerSemana(new Date())) {
-            totalDiasUltimaSemana = fecha.getDate();
-          }
-        });
-
-        // Manejar los días restantes en la última semana
-        if (totalDiasUltimaSemana !== 0) {
-          const ultimaSemana = dataPorSemana[dataPorSemana.length - 1];
-          const diasRestantes = 7 - ultimaSemana.cargos.length; // Días restantes en la semana actual
-
-          // Llenar con ceros los días restantes en la última semana
-          for (let i = 0; i < diasRestantes; i++) {
-            ultimaSemana.cargos.push(0);
-            ultimaSemana.abonos.push(0);
-          }
-        }
-
-        return dataPorSemana;
-      },
-
-        // Función para obtener el número de semana de una fecha
-        obtenerSemana(fecha) {
-          const inicioAnio = new Date(fecha.getFullYear(), 0, 1);
-          const diferencia = fecha - inicioAnio;
-          const unaSemana = 1000 * 60 * 60 * 24 * 7;
-          return Math.ceil((diferencia - inicioAnio.getDay() * (1000 * 60 * 60 * 24)) / unaSemana);
-        },
-
-        // Función para obtener la fecha de inicio de una semana a partir de una fecha
-        obtenerFechaInicioSemana(fecha) {
-          const dia = fecha.getDay();
-          const inicioSemana = new Date(fecha);
-          inicioSemana.setDate(fecha.getDate() - dia); // Retroceder hasta el primer día de la semana (domingo)
-          return inicioSemana.toISOString().split('T')[0]; // Obtener la fecha en formato 'YYYY-MM-DD'
-        },
         async downloadPDF() {
         let doc = new jsPDF();
 
@@ -714,4 +696,56 @@ th {
   margin-top: 60px;
   align-items: center;
 }
+.dark-mode {
+  background-color: #333; /* Color de fondo oscuro */
+  color: #fff; /* Color de texto blanco */
+}
+
+.dark-mode-select,
+.dark-mode-input {
+  background-color: #444; /* Color de fondo oscuro para select e input */
+  color: #fff; /* Color de texto blanco para select e input */
+}
+.dark-mode-table {
+  color: #fff; /* Color del texto en modo oscuro */
+  background-color: #333; /* Color de fondo en modo oscuro */
+  border-collapse: collapse; /* Colapsar los bordes de la tabla */
+  width: 95%; /* Ancho de la tabla */
+  margin-top: 20px; /* Margen superior */
+  margin-bottom: 8px; /* Margen inferior */
+  margin-left: 20px;
+}
+
+.dark-mode-table th,
+.dark-mode-table td {
+  border: 1px solid #ddd; /* Borde de las celdas en modo oscuro */
+  padding: 8px; /* Espaciado interno de las celdas */
+  text-align: left; /* Alineación del texto en las celdas */
+}
+
+.dark-mode-table th {
+  background-color: #555; /* Color de fondo de los encabezados en modo oscuro */
+  color: #fff; /* Color del texto de los encabezados en modo oscuro */
+}
+.dark-mode-saldo-anterior-table {
+  color: #fff; /* Color del texto en modo oscuro */
+  background-color: #333; /* Color de fondo en modo oscuro */
+  border-collapse: collapse; /* Colapsar los bordes de la tabla */
+  width: 95%; /* Ancho de la tabla */
+  margin-bottom: 2px; /* Margen inferior */
+  text-align: right; /* Alineación del texto a la derecha */
+  margin-left: 20px;
+}
+
+.dark-mode-saldo-anterior-table th,
+.dark-mode-saldo-anterior-table td {
+  border: 1px solid #ddd; /* Borde de las celdas en modo oscuro */
+  padding: 8px; /* Espaciado interno de las celdas */
+}
+
+.dark-mode-saldo-anterior-table th {
+  background-color: #555; /* Color de fondo de los encabezados en modo oscuro */
+  color: #fff; /* Color del texto de los encabezados en modo oscuro */
+}
+
 </style>
