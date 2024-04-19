@@ -167,7 +167,7 @@ export default {
 
   methods: {
     async cargarEstaciones() {
-      const url = 'http://192.168.1.68/admin/get.php/estaciones';
+      const url = 'http://gasserver.dyndns.org:8081/admin/get.php/estaciones';
       try {
         const response = await axios.get(url);
         this.estaciones = response.data.data.reduce((acc, item) => {
@@ -180,7 +180,7 @@ export default {
     },
     async cargarBancos() {
       if (this.dbm) {
-        const url = `http://192.168.1.68/admin/get.php/listabanco?dbm=${this.dbm}`;
+        const url = `http://gasserver.dyndns.org:8081/admin/get.php/listabanco?dbm=${this.dbm}`;
         try {
           const response = await axios.get(url);
           this.bancos = response.data.data.reduce((acc, item) => {
@@ -195,41 +195,40 @@ export default {
       }
     },
     async filtrarDatos() {
-      if (this.fechaInicio && this.fechaFin && this.dbm) {
-<<<<<<< HEAD
-        const url = `http://gasserver.dyndns.org:8081/admin/get.php/transaccionesbanco`;
-        
-        // Concatenar la fecha de inicio y la hora de inicio
-        const fechaInicioConHora = `${this.fechaInicio}T${this.horaInicio}:00`;
-        
-        // Concatenar la fecha de fin y la hora de fin
-        const fechaFinConHora = `${this.fechaFin}T${this.horaFin}:00`;
-=======
-        const url = `http://192.168.1.68/admin/get.php/transaccionesbanco`;
-        const fechaFinConHora = `${this.fechaFin}T12:00:00`;
->>>>>>> 3deaf386b0250f4c1c9a8a723dfa8d62a3b516c3
+  if (this.fechaInicio && this.fechaFin && this.dbm) {
+    // Asegúrate de usar solo una URL para la solicitud
+    const url = `http://gasserver.dyndns.org:8081/admin/get.php/transaccionesbanco`;
 
-        const params = {
-          fechaInicio: fechaInicioConHora,
-          fechaFin: fechaFinConHora,
-          dbm: parseInt(this.dbm)
-        };
+    // Concatenar la fecha de inicio y la hora de inicio
+    const fechaInicioConHora = `${this.fechaInicio}T${this.horaInicio}:00`;
+    
+    // Concatenar la fecha de fin y la hora de fin
+    // La siguiente línea está duplicada y con información contradictoria, así que la he eliminado
+    // const fechaFinConHora = `${this.fechaFin}T${this.horaFin}:00`;
+    const fechaFinConHora = `${this.fechaFin}T12:00:00`;
 
-        try {
-          const response = await axios.get(url, { params });
-          this.resultadosOriginales = response.data.data;
-          this.filtrarPorBanco();
-          this.calcularTotalesPorBanco();
-          this.mostrarResultados = true;
-          this.mostrarAlertas = true;
-          this.updateChart();
-        } catch (error) {
-          console.error("Error al obtener datos de la API:", error);
-        }
-      } else {
-        console.error("Por favor, selecciona una estación y proporciona las fechas de inicio y fin.");
-      }
-    },
+    const params = {
+      fechaInicio: fechaInicioConHora,
+      fechaFin: fechaFinConHora,
+      dbm: parseInt(this.dbm)
+    };
+
+    try {
+      const response = await axios.get(url, { params });
+      this.resultadosOriginales = response.data.data;
+      this.filtrarPorBanco();
+      this.calcularTotalesPorBanco();
+      this.mostrarResultados = true;
+      this.mostrarAlertas = true;
+      this.updateChart();
+    } catch (error) {
+      console.error("Error al obtener datos de la API:", error);
+    }
+  } else {
+    console.error("Por favor, selecciona una estación y proporciona las fechas de inicio y fin.");
+  }
+},
+
 
       filtrarPorBanco() {
       if (this.bancoSeleccionado) {

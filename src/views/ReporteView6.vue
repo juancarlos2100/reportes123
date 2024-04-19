@@ -16,6 +16,7 @@
       <input type="number" v-model="turnoFin" style="width: 400px; height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;">
       <button class="boton-filtrar" type="submit">Filtrar</button>
     </form>
+    <button class="boton-descargar" @click="downloadPDF">Descargar PDF</button>
 
     <!-- Tabla para los productos individuales -->
     <table>
@@ -37,30 +38,30 @@
       <tbody>
         <tr v-for="(adeudo, index) in productosIndividuales" :key="index">
           <td>{{ adeudo['producto'] }}</td>
-          <td>${{ parseFloat(adeudo['inicio']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
-          <td>${{ parseFloat(adeudo['compras']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
-          <td>${{ parseFloat(adeudo['jarras']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
+          <td>{{ parseFloat(adeudo['inicio']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
+          <td>{{ parseFloat(adeudo['compras']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
+          <td>{{ parseFloat(adeudo['jarras']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
           <td>${{ parseFloat(adeudo['ventas']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
           <td>${{ parseFloat(adeudo['precio']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
           <td>${{ parseFloat(adeudo['importe']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
-          <td>${{ parseFloat(adeudo['fin']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
-          <td>${{ parseFloat(adeudo['fin_calculado']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
-          <td>${{ parseFloat(adeudo['diferencia']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
+          <td>{{ parseFloat(adeudo['fin']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
+          <td>{{ parseFloat(adeudo['fin_calculado']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
+          <td>{{ parseFloat(adeudo['diferencia']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
           <td>{{ parseFloat(adeudo['porcentaje']).toFixed(2) }}%</td>
         </tr>
         <!-- Nueva fila para mostrar las sumas totales -->
         <tr>
           <td>Total</td>
-          <td>${{ sumarColumna('inicio').toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
-          <td>${{ sumarColumna('compras').toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
-          <td>${{ sumarColumna('jarras').toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
+          <td>{{ sumarColumna('inicio').toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
+          <td>{{ sumarColumna('compras').toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
+          <td>{{ sumarColumna('jarras').toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
           <td>${{ sumarColumna('ventas').toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
-          <td>{{ calcularPromedioPrecio() }}</td>
+          <td>. </td>
           <td>${{ sumarColumna('importe').toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
-          <td>${{ sumarColumna('fin').toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
-          <td>${{ sumarColumna('fin_calculado').toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
-          <td>${{ sumarColumna('diferencia').toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
-          <td>{{ calcularPorcentajePromedio() }}</td>
+          <td>{{ sumarColumna('fin').toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
+          <td>{{ sumarColumna('fin_calculado').toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
+          <td>{{ sumarColumna('diferencia').toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
+          <td>.</td>
         </tr>
       </tbody>
     </table>
@@ -69,6 +70,8 @@
 
 <script>
 import axios from "axios";
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 export default {
   data() {
@@ -87,7 +90,7 @@ export default {
 
   methods: {
     async cargarEstaciones() {
-      const url = 'http://192.168.1.68/admin/get.php/estaciones';
+      const url = 'http://gasserver.dyndns.org:8081/admin/get.php/estaciones';
       try {
         const response = await axios.get(url);
         this.estaciones = response.data.data.reduce((acc, item) => {
@@ -137,7 +140,47 @@ export default {
     calcularPorcentajePromedio() {
       const totalPorcentaje = this.sumarColumna('porcentaje');
       return totalPorcentaje / this.productosIndividuales.length;
+    },
+
+    async downloadPDF() {
+      let doc = new jsPDF({ orientation: 'landscape' });
+
+      // Título del informe con periodo de fechas, turno inicial, turno final y estación
+      const titulo = `Ventas Periodo - Turno Inicial: ${this.turnoInicio} - Turno Final: ${this.turnoFin} - Estación: ${this.estaciones[this.dbm]} `;
+      doc.text(titulo, doc.internal.pageSize.getWidth() / 2, 10, { align: 'center', fontStyle: 'bold' });
+
+      // Tabla de datos
+      const ventasTableData = [];
+      const tableRows = document.querySelectorAll('table tbody tr');
+      tableRows.forEach(row => {
+        const rowData = [];
+        row.querySelectorAll('td').forEach(cell => {
+          rowData.push(cell.textContent.trim());
+        });
+        ventasTableData.push(rowData);
+      });
+
+      // Agregar tabla al PDF
+      autoTable(doc, {
+        head: [['Producto', 'Inicio', 'Compras', 'Jarras', 'Ventas', 'Precio', 'Importe', 'Fin', 'Fin calculado', 'Diferencia', 'Porcentaje']],
+        body: ventasTableData,
+        startY: 20,
+        headStyles: { fillColor: '#D3D3D3', textColor: '#000000' }
+      });
+
+      // Footer del PDF
+      const totalPages = doc.internal.getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        doc.setFontSize(10);
+        doc.text('Página ' + i + ' de ' + totalPages, doc.internal.pageSize.getWidth() - 80, doc.internal.pageSize.getHeight() - 2);
+      }
+
+      // Guardar el PDF
+      doc.save('Informe_Ventas_Periodo.pdf');
     }
+
+
   },
   mounted() {
     this.cargarEstaciones();
