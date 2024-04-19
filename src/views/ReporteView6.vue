@@ -19,6 +19,7 @@
     <button class="boton-descargar" @click="downloadPDF">Descargar PDF</button>
 
     <!-- Tabla para los productos individuales -->
+    <div>
     <table :class="{ 'table': !isDarkMode, 'dark-mode-table': isDarkMode }">
       <thead>
         <tr>
@@ -65,11 +66,23 @@
         </tr>
       </tbody>
     </table>
+    </div>
+     <!-- Contenedor para el gráfico de pastel -->
+     <div style="float: left; width: 45%; height: 600px;">
+      <canvas id="pieChart"></canvas>
+    </div>
+    <!-- Contenedor para el gráfico de barras -->
+    <div style="float: right; width: 45%; height: 700px;">
+      <canvas id="barChart"></canvas>
+    </div>
+
+
   </div>
 </template>
 
 <script>
 import axios from "axios";
+import Chart from 'chart.js/auto';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -86,6 +99,8 @@ export default {
       turnoInicio: null,
       turnoFin: null,
       estaciones: {},
+      pieChart: null,
+      barChart: null
     };
   },
 
@@ -122,6 +137,9 @@ export default {
           this.total = this.productosIndividuales.find(item => item.id === 'total');
           // Filtrar los productos individuales
           this.productosIndividuales = this.productosIndividuales.filter(item => item.id !== 'total');
+
+          // Actualizar los gráficos
+          this.updateChart();
         } catch (error) {
           console.error("Error al obtener datos de la API:", error);
         }
@@ -142,8 +160,129 @@ export default {
       const totalPorcentaje = this.sumarColumna('porcentaje');
       return totalPorcentaje / this.productosIndividuales.length;
     },
+    updateChart() {
+  // Obtener los datos para los gráficos
+  const labelsPie = this.productosIndividuales.map(producto => producto.producto);
+  const dataPie = this.productosIndividuales.map(producto => parseFloat(producto.importe));
+  const dataBarCompras = this.productosIndividuales.map(producto => parseFloat(producto.compras));
+  const dataBarVentas = this.productosIndividuales.map(producto => parseFloat(producto.ventas));
 
-    async downloadPDF() {
+  // Colores base y resaltados para los gráficos
+  const baseColors = [
+    'rgba(255, 51, 102, 0.3)', // Rosa neón
+    'rgba(102, 255, 51, 0.3)', // Verde neón
+    'rgba(255, 255, 51, 0.3)', // Amarillo neón
+    'rgba(51, 204, 255, 0.3)', // Azul neón
+    'rgba(204, 102, 255, 0.3)', // Morado neón
+    'rgba(255, 153, 51, 0.3)' // Naranja neón
+  ];
+  const neonHoverColors = [
+    'rgba(255, 51, 102, 6)', // Rosa neón
+    'rgba(102, 255, 51, 6)', // Verde neón
+    'rgba(255, 255, 51, 6)', // Amarillo neón
+    'rgba(51, 204, 255, 6)', // Azul neón
+    'rgba(204, 102, 255, 6)', // Morado neón
+    'rgba(255, 153, 51, 6)' // Naranja neón
+  ];
+
+  // Crear gráfico de pastel
+  const ctxPie = document.getElementById('pieChart').getContext('2d');
+  if (this.pieChart) {
+    this.pieChart.destroy();
+  }
+  this.pieChart = new Chart(ctxPie, {
+    type: 'pie',
+    data: {
+      labels: labelsPie,
+      datasets: [{
+        data: dataPie,
+        backgroundColor: baseColors,
+        hoverBackgroundColor: neonHoverColors,
+        borderColor: '#ffffff', // Borde blanco
+        borderWidth: 2 // Ancho del borde
+      }]
+    },
+    options: {
+      plugins: {
+        title: {
+          display: true,
+          text: 'Importe por Combustible',
+          color: this.isDarkMode ? '#ffffff' : '#000000' // Color del título dependiendo del modo
+        },
+        labels: {
+            font: {
+              size: 12,
+              weight: 'bold'
+            },
+            color: this.isDarkMode ? '#ffffff' : '#000000' // Color de las etiquetas del legend según el modo oscuro
+          }
+      },
+      
+    }
+  });
+
+  // Crear gráfico de barras
+  const ctxBar = document.getElementById('barChart').getContext('2d');
+  if (this.barChart) {
+    this.barChart.destroy();
+  }
+  this.barChart = new Chart(ctxBar, {
+    type: 'bar',
+    data: {
+      labels: labelsPie,
+      datasets: [{
+        label: 'Compras',
+        data: dataBarCompras,
+        backgroundColor: baseColors,
+        hoverBackgroundColor: neonHoverColors,
+        borderColor: '#ffffff', // Borde blanco
+        borderWidth: 2 // Ancho del borde
+      }, {
+        label: 'Ventas',
+        data: dataBarVentas,
+        backgroundColor: baseColors.map(color => color.replace('0.7', '1')), // Colores más intensos
+        hoverBackgroundColor: neonHoverColors.map(color => color.replace('0.7', '1')), // Colores más intensos al pasar el cursor
+        borderColor: '#ffffff', // Borde blanco
+        borderWidth: 2 // Ancho del borde
+      }]
+    },
+    options: {
+      plugins: {
+        title: {
+          display: true,
+          text: 'Compras y Ventas por Combustible',
+          color: this.isDarkMode ? '#ffffff' : '#000000' // Color del título dependiendo del modo
+        },
+        labels: {
+            font: {
+              size: 12,
+              weight: 'bold'
+            },
+            color: this.isDarkMode ? '#ffffff' : '#000000' // Color de las etiquetas del legend según el modo oscuro
+          }
+      },
+      scales: {
+          x: {
+            grid: {
+              color: this.isDarkMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)' // Color de la cuadrícula de fondo
+            },
+            ticks: {
+              color: this.isDarkMode ? '#ffffff' : '#000000' // Color de las etiquetas del eje x según el modo oscuro
+            }
+          },
+          y: {
+            grid: {
+              color: this.isDarkMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)' // Color de la cuadrícula de fondo
+            },
+            ticks: {
+              color: this.isDarkMode ? '#ffffff' : '#000000' // Color de las etiquetas del eje y según el modo oscuro
+            }
+          }
+        }
+    }
+  });
+},
+async downloadPDF() {
       let doc = new jsPDF({ orientation: 'landscape' });
 
       // Título del informe con periodo de fechas, turno inicial, turno final y estación
@@ -180,7 +319,6 @@ export default {
       // Guardar el PDF
       doc.save('Informe_Ventas_Periodo.pdf');
     }
-
 
   },
   mounted() {
@@ -343,7 +481,8 @@ th {
 .dark-mode {
   background-color: #333; /* Color de fondo oscuro */
   color: #fff; /* Color de texto blanco */
-  height: 100vh;
+  height: 110vh;
+  width: 100vw;
 }
 .dark-mode-select,
 .dark-mode-input {
