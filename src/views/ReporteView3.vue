@@ -1,5 +1,5 @@
 <template>
-  <div class="container">
+   <div :class="{ 'dark-mode': isDarkMode }" class="container">
     <header>
       <img class="imagen-encabezado" src="@/assets/logok.png" alt="Descripción de la imagen">
     </header>
@@ -9,15 +9,15 @@
     <form @submit.prevent="filtrarDatos">
 
       <label for="estacion" style="font-size: 24px; font-weight: bold; padding-right: 10px; font-family: Arial, sans-serif;">Estación:</label>
-      <select id="estacion" v-model="dbm" style="width: 400px; height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;">
+      <select id="estacion" v-model="dbm" class="form-select" :class="{ 'dark-mode-select': isDarkMode }" style="width: 400px; height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;">
         <option v-for="(nombre, id) in estaciones" :key="id" :value="id">{{ nombre }}</option>
       </select>
 
       <label for="fechaInicio" style="font-size: 24px; font-weight: bold; padding-right: 10px; font-family: Arial, sans-serif;" >Fecha de Inicio:</label>
-      <input type="date" v-model="fechaInicio" style="width: 150px; height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;">
+      <input type="date" v-model="fechaInicio"  class="form-select" :class="{ 'dark-mode-select': isDarkMode }" style="width: 150px; height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;">
       
       <label for="fechaFin" style="font-size: 24px; font-weight: bold; padding-right: 10px; font-family: Arial, sans-serif;">Fecha de Fin:</label>
-      <input type="date" v-model="fechaFin" style="width: 150px; height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;">
+      <input type="date" v-model="fechaFin"  class="form-select" :class="{ 'dark-mode-select': isDarkMode }" style="width: 150px; height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;">
 
 
       <button class="boton-filtrar" type="submit">Filtrar</button>
@@ -31,7 +31,7 @@
       <!-- Lado izquierdo -->
       <div class="left-container" style="flex: 0 0 55%; overflow: auto;">
         <h1>Transacciones Registradas</h1>
-        <table class="table">
+        <table :class="{ 'table': !isDarkMode, 'dark-mode-table': isDarkMode }">
           <thead>
             <tr>
               <th>Folio-Factura</th>
@@ -64,16 +64,18 @@
       <!-- Lado derecho -->
       <div class="right-container" style="flex: 0 0 45%; overflow: auto;">
         <h1>Tablero de Gráficas</h1>
+        <h3>Proporción de Cargos-Abonos</h3>
         <div class="chart-container">
           <canvas id="myBarChart"></canvas>
         </div>
         <!-- Nuevo gráfico de pastel (chart2) -->
         <div class="chart-container">
+          <h3>Estadistica por Semana</h3>
           <canvas id="myLineChart"></canvas>
         </div>
         <div class="cont-total">
           <h1>Total por Proveedor</h1>
-            <table class="tabla-totales">
+          <table :class="{ 'tabla-totales': !isDarkMode, 'dark-mode-table': isDarkMode }">
               <thead>
                 <tr>
                   <th>Nombre</th>
@@ -108,6 +110,7 @@ import ExcelJS from 'exceljs'
 export default {
   data() {
     return {
+      isDarkMode: true, // Variable para controlar el modo oscuro
       resultados: [],
       resultadosOriginales: [], // Nuevo atributo
       idTipo: null,
@@ -122,7 +125,7 @@ export default {
   },
   methods: {
     async cargarEstaciones() {
-      const url = 'http://192.168.1.68/admin/get.php/estaciones';
+      const url = 'http://gasserver.dyndns.org:8081/admin/get.php/estaciones';
       try {
         const response = await axios.get(url);
         this.estaciones = response.data.data.reduce((acc, item) => {
@@ -135,7 +138,7 @@ export default {
     },
     async filtrarDatos() {
       if (this.fechaInicio && this.fechaFin && this.dbm) {
-        const url = "http://192.168.1.68/admin/get.php/saldospipas";
+        const url = "http://gasserver.dyndns.org:8081/admin/get.php/saldospipas";
         const params = {
           fechaInicio: this.fechaInicio,
           fechaFin: this.fechaFin,
@@ -171,126 +174,184 @@ export default {
     }, {});
     this.updateChart();
   },
-  updateChart() {
-  const ctxBar = document.getElementById('myBarChart').getContext('2d');
-  const ctxLine = document.getElementById('myLineChart').getContext('2d');
+    updateChart() {
+    const ctxBar = document.getElementById('myBarChart').getContext('2d');
+    const ctxLine = document.getElementById('myLineChart').getContext('2d');
 
-  if (this.myBarChart) {
-    this.myBarChart.destroy();
-  }
-  if (this.myLineChart) {
-    this.myLineChart.destroy();
-  }
-
-  // Colores base para las barras
-  const baseColors = [
-    'rgba(54, 162, 235, 0.3)',
-    'rgba(255, 99, 132, 0.3)',
-    'rgba(75, 192, 192, 0.3)'
-  ];
-
-  // Colores intensos al pasar el cursor
-  const hoverColors = [
-    'rgba(54, 162, 235, 0.6)',
-    'rgba(255, 99, 132, 0.6)',
-    'rgba(75, 192, 192, 0.6)'
-  ];
-
-  // Gráfico de barras
-  this.myBarChart = new Chart(ctxBar, {
-    type: 'bar',
-    data: {
-      labels: Object.keys(this.totalesPorNombre),
-      datasets: [{
-          label: 'Cargos',
-          data: Object.values(this.totalesPorNombre).map(totales => totales.cargos),
-          backgroundColor: baseColors[0],
-          hoverBackgroundColor: hoverColors[0],
-          borderColor: 'rgba(54, 162, 235, 1)',
-          borderWidth: 1
-        },
-        {
-          label: 'Abonos',
-          data: Object.values(this.totalesPorNombre).map(totales => totales.abonos),
-          backgroundColor: baseColors[1],
-          hoverBackgroundColor: hoverColors[1],
-          borderColor: 'rgba(255, 99, 132, 1)',
-          borderWidth: 1
-        },
-        {
-          label: 'Diferencia',
-          data: Object.values(this.totalesPorNombre).map(totales => totales.diferencia),
-          backgroundColor: baseColors[2],
-          hoverBackgroundColor: hoverColors[2],
-          borderColor: 'rgba(75, 192, 192, 1)',
-          borderWidth: 1
-        }
-      ]
-    },
-    options: {
-      scales: {
-        y: {
-          beginAtZero: true
-        }
-      }
+    if (this.myBarChart) {
+      this.myBarChart.destroy();
     }
-  });
+    if (this.myLineChart) {
+      this.myLineChart.destroy();
+    }
 
-  // Agrupar los registros por semana
-  const dataPorSemana = this.agruparPorSemana(this.resultados);
+    // Colores neón base para las barras
+    const neonBaseColors = [
+      'rgba(255, 0, 0, 0.3)',    // Rojo
+      'rgba(0, 255, 0, 0.3)',    // Verde
+      'rgba(0, 0, 255, 0.3)'     // Azul
+    ];
 
-  // Gráfico de líneas
- // Gráfico de líneas
-this.myLineChart = new Chart(ctxLine, {
-  type: 'line',
-  data: {
-    labels: dataPorSemana.map(semana => semana.fechaInicio), // Utilizar la fecha de inicio de cada semana como etiqueta
-    datasets: [{
-        label: 'Cargos',
-        data: dataPorSemana.map(semana => semana.cargos.reduce((acc, curr) => acc + curr, 0)),
-        borderColor: 'rgba(255, 99, 132, 0.3)', // Rojo
-        backgroundColor: 'transparent',
-        pointRadius: 5,
-        pointHoverRadius: 10,
-        hoverBackgroundColor: 'rgba(255, 99, 132, 0.6)',
-        fill: false
+    // Colores neón al pasar el cursor
+    const neonHoverColors = [
+      'rgba(255, 0, 0, 0.6)',    // Rojo
+      'rgba(0, 255, 0, 0.6)',    // Verde
+      'rgba(0, 0, 255, 0.6)'     // Azul
+    ];
+
+    // Colores de borde neón
+    const neonBorderColors = [
+      'rgba(255, 0, 0, 1)',      // Rojo
+      'rgba(0, 255, 0, 1)',      // Verde
+      'rgba(0, 0, 255, 1)'       // Azul
+    ];
+
+    // Gráfico de barras
+    this.myBarChart = new Chart(ctxBar, {
+      type: 'bar',
+      data: {
+        labels: Object.keys(this.totalesPorNombre),
+        datasets: [{
+            label: 'Cargos',
+            data: Object.values(this.totalesPorNombre).map(totales => totales.cargos),
+            backgroundColor: neonBaseColors[0],
+            hoverBackgroundColor: neonHoverColors[0],
+            borderColor: neonBorderColors[0],
+            borderWidth: 1
+          },
+          {
+            label: 'Abonos',
+            data: Object.values(this.totalesPorNombre).map(totales => totales.abonos),
+            backgroundColor: neonBaseColors[1],
+            hoverBackgroundColor: neonHoverColors[1],
+            borderColor: neonBorderColors[1],
+            borderWidth: 1
+          },
+          {
+            label: 'Diferencia',
+            data: Object.values(this.totalesPorNombre).map(totales => totales.diferencia),
+            backgroundColor: neonBaseColors[2],
+            hoverBackgroundColor: neonHoverColors[2],
+            borderColor: neonBorderColors[2],
+            borderWidth: 1
+          }
+        ]
       },
-      {
-        label: 'Abonos',
-        data: dataPorSemana.map(semana => semana.abonos.reduce((acc, curr) => acc + curr, 0)),
-        borderColor: 'rgba(54, 162, 235, 0.3)', // Azul
-        backgroundColor: 'transparent',
-        pointRadius: 5,
-        pointHoverRadius: 10,
-        hoverBackgroundColor: 'rgba(54, 162, 235, 0.6)',
-        fill: false
-      }
-    ]
-  },
-  options: {
-    plugins: {
-      title: {
-        display: true,
-        text: 'Relación Cargo-Abono',
-        font: {
-          size: 14,
-          weight: 'bold'
+      options: {
+        plugins: {
+          legend: {
+          labels: {
+            font: {
+              size: 12,
+              weight: 'bold'
+            },
+            color: this.isDarkMode ? '#ffffff' : '#000000' // Color de las etiquetas del legend según el modo oscuro
+          }
+        }
         },
-        padding: {
-          top: 10,
-          bottom: 20
+        scales: {
+          x: {
+            grid: {
+              color: this.isDarkMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)' // Color de la cuadrícula de fondo
+            },
+            ticks: {
+              color: this.isDarkMode ? '#ffffff' : '#000000' // Color de las etiquetas del eje x según el modo oscuro
+            }
+          },
+          y: {
+            grid: {
+              color: this.isDarkMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)' // Color de la cuadrícula de fondo
+            },
+            ticks: {
+              color: this.isDarkMode ? '#ffffff' : '#000000' // Color de las etiquetas del eje y según el modo oscuro
+            }
+          }
         }
       }
-    },
-    scales: {
-      y: {
-        beginAtZero: true
-      }
-    }
-  }
-});
+    });
 
-},
+
+    // Agrupar los registros por semana
+    const dataPorSemana = this.agruparPorSemana(this.resultados);
+
+    // Gráfico de líneas
+    this.myLineChart = new Chart(ctxLine, {
+      type: 'line',
+      data: {
+        labels: dataPorSemana.map(semana => semana.fechaInicio),
+        datasets: [{
+            label: 'Cargos',
+            data: dataPorSemana.map(semana => semana.cargos.reduce((acc, curr) => acc + curr, 0)),
+            borderColor: 'rgba(255, 0, 0, 0.6)', // Rojo
+            backgroundColor: 'transparent',
+            pointRadius: 8,
+            pointHoverRadius: 10,
+            hoverBackgroundColor: 'rgba(255, 0, 0, 0.8)', // Rojo
+            fill: false
+          },
+          {
+            label: 'Abonos',
+            data: dataPorSemana.map(semana => semana.abonos.reduce((acc, curr) => acc + curr, 0)),
+            borderColor: 'rgba(0, 255, 0, 0.6)', // Verde
+            backgroundColor: 'transparent',
+            pointRadius: 8,
+            pointHoverRadius: 10,
+            hoverBackgroundColor: 'rgba(0, 255, 0, 0.8)', // Verde
+            fill: false
+          },
+          
+        ]
+      },
+      options: {
+        plugins: {
+          title: {
+            display: true,
+            text: 'Relación Cargo-Abono',
+            font: {
+              size: 14,
+              weight: 'bold'
+            },
+            padding: {
+              top: 10,
+              bottom: 20
+            }
+          },
+          legend: {
+          labels: {
+            font: {
+              size: 12,
+              weight: 'bold'
+            },
+            color: this.isDarkMode ? '#ffffff' : '#000000' // Color de las etiquetas del legend según el modo oscuro
+          }
+        }
+          
+        },
+        
+        scales: {
+          x: {
+            grid: {
+              color: this.isDarkMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)', // Color de la cuadrícula de fondo
+            },
+            ticks: {
+              color: this.isDarkMode ? '#ffffff' : '#000000' // Color de las etiquetas del eje x según el modo oscuro
+            }
+          },
+          y: {
+            grid: {
+              color: this.isDarkMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)', // Color de la cuadrícula de fondo
+            },
+            ticks: {
+              color: this.isDarkMode ? '#ffffff' : '#000000' // Color de las etiquetas del eje y según el modo oscuro
+            }
+          }
+        }
+      }
+    });
+
+  },
+
+
 agruparPorSemana(resultados) {
   // Ordenar los resultados por fecha de creación
   const resultadosOrdenados = resultados.sort((a, b) => new Date(a.fecha_creacion) - new Date(b.fecha_creacion));
@@ -637,6 +698,76 @@ th {
 .cont-total{
   margin-top: 60px;
   align-items: center;
+}
+.dark-mode {
+  background-color: #333; /* Color de fondo oscuro */
+  color: #fff; /* Color de texto blanco */
+  width: 100vw;
+}
+
+.dark-mode-select,
+.dark-mode-input {
+  background-color: #444; /* Color de fondo oscuro para select e input */
+  color: #fff; /* Color de texto blanco para select e input */
+
+}
+.dark-mode-table {
+  color: #fff; /* Color del texto en modo oscuro */
+  background-color: #333; /* Color de fondo en modo oscuro */
+  border-collapse: collapse; /* Colapsar los bordes de la tabla */
+  width: 95%; /* Ancho de la tabla */
+  margin-top: 20px; /* Margen superior */
+  margin-bottom: 8px; /* Margen inferior */
+  margin-left: 20px;
+}
+
+.dark-mode-table th,
+.dark-mode-table td {
+  border: 1px solid #ddd; /* Borde de las celdas en modo oscuro */
+  padding: 8px; /* Espaciado interno de las celdas */
+  text-align: left; /* Alineación del texto en las celdas */
+}
+
+.dark-mode-table th {
+  background-color: #555; /* Color de fondo de los encabezados en modo oscuro */
+  color: #fff; /* Color del texto de los encabezados en modo oscuro */
+}
+.dark-mode-saldo-anterior-table {
+  color: #fff; /* Color del texto en modo oscuro */
+  background-color: #333; /* Color de fondo en modo oscuro */
+  border-collapse: collapse; /* Colapsar los bordes de la tabla */
+  width: 95%; /* Ancho de la tabla */
+  margin-bottom: 2px; /* Margen inferior */
+  text-align: right; /* Alineación del texto a la derecha */
+  margin-left: 20px;
+}
+
+.dark-mode-saldo-anterior-table th,
+.dark-mode-saldo-anterior-table td {
+  border: 1px solid #ddd; /* Borde de las celdas en modo oscuro */
+  padding: 8px; /* Espaciado interno de las celdas */
+}
+
+.dark-mode-saldo-anterior-table th {
+  background-color: #555; /* Color de fondo de los encabezados en modo oscuro */
+  color: #fff; /* Color del texto de los encabezados en modo oscuro */
+}
+.dark-mode .tabla-totales {
+  background-color: #333; /* Fondo oscuro */
+  color: #fff; /* Texto blanco */
+  border-collapse: collapse; /* Colapso de bordes */
+  width: 100%; /* Ancho completo */
+}
+
+.dark-mode .tabla-totales th,
+.dark-mode .tabla-totales td {
+  border: 1px solid #fff; /* Borde blanco */
+  padding: 8px; /* Espaciado interno */
+  text-align: center; /* Alineación centrada */
+}
+
+.dark-mode .tabla-totales th {
+  background-color: #555; /* Color de fondo para encabezados */
 }
 </style>
 

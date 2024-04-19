@@ -40,7 +40,7 @@
 
     <div class="container" style="display: flex; height: 100%;">
       <!-- Lado izquierdo -->
-      <div class="left-container" style="flex: 0 0 55%; overflow: auto;">
+      <div class="left-container" style="flex: 0 0 54%; overflow: auto;">
         <h1>Transacciones Registradas</h1>
           <!-- Nueva tabla para mostrar el Saldo Anterior -->
           <table :class="{ 'saldo-anterior-table': !isDarkMode, 'dark-mode-saldo-anterior-table': isDarkMode }" style="margin-bottom: 2px; text-align: right;">
@@ -62,7 +62,7 @@
           <thead>
             <tr>
               <th>Banco</th>
-              <th>id</th>
+              <!--<th>id</th>-->
               <th>Descripcion</th>
               <th>Movimiento</th>
               <th>Fecha Contable</th>
@@ -74,7 +74,7 @@
           <tbody v-if="mostrarResultados">
             <tr v-for="(adeudo, index) in resultados" :key="index">
               <td>{{ adeudo['banco'] }}</td>
-              <td>{{ adeudo['id_transaccion'] }}</td>
+              <!-- <td>{{ adeudo['id_transaccion'] }}</td>-->
               <td>{{ adeudo['descripcion'].length > 45 ? adeudo['descripcion'].slice(0, 45) + '...' : adeudo['descripcion'] }}</td>
               <td><strong>{{ adeudo['id_tipo'] === '1' ? 'Abonos' : (adeudo['id_tipo'] === '2' ? 'Cargos' : 'otro') }}</strong></td>
               <td>{{ adeudo['fecha_contable'] }}</td>
@@ -92,8 +92,9 @@
       </div>
 
   <!-- Lado derecho -->
-  <div class="right-container" style="flex: 0 0 45%; overflow: auto;">
+  <div class="right-container" style="flex: 0 0 44%; overflow: auto;">
     <h1>Tablero de Gráficas</h1>
+    <h3>Proporcion de Cargos-Abonos</h3>
     <div class="chart-container1">
       <canvas id="polarChart"></canvas>
     </div>
@@ -105,7 +106,7 @@
     </div>
     <div class="cont-total">
       <h1>Ultima Transaccion del Periodo</h1>
-      <table class="tabla-totales">
+      <table :class="{ 'tabla-totales': !isDarkMode, 'dark-mode-table': isDarkMode }">
         <thead>
           <tr>
             <th>Banco</th>
@@ -121,7 +122,7 @@
       </table>
       <br>
       <h1>Total de Cargos y Abonos por Banco</h1>
-      <table class="tabla-totales">
+      <table :class="{ 'tabla-totales': !isDarkMode, 'dark-mode-table': isDarkMode }">
         <thead>
           <tr>
             <th>Banco</th>
@@ -215,10 +216,7 @@ export default {
 
     // Concatenar la fecha de inicio y la hora de inicio
     const fechaInicioConHora = `${this.fechaInicio}T${this.horaInicio}:00`;
-    
-    // Concatenar la fecha de fin y la hora de fin
-    // La siguiente línea está duplicada y con información contradictoria, así que la he eliminado
-    // const fechaFinConHora = `${this.fechaFin}T${this.horaFin}:00`;
+
     const fechaFinConHora = `${this.fechaFin}T12:00:00`;
 
     const params = {
@@ -308,30 +306,30 @@ updateChart() {
 
   // Colores base para las barras del gráfico polar
   const baseColorsPolar = [
-    'rgba(54, 162, 235, 0.3)',
-    'rgba(255, 99, 132, 0.3)',
-    'rgba(75, 192, 192, 0.3)'
+    'rgba(41, 255, 218, 0.4)',
+    'rgba(1, 196, 231, 0.4)',
+    'rgba(248, 45, 151, 0.4)'
   ];
 
   // Colores intensos al pasar el cursor para el gráfico polar
   const hoverColorsPolar = [
-    'rgba(54, 162, 235, 0.6)',
-    'rgba(255, 99, 132, 0.6)',
-    'rgba(75, 192, 192, 0.6)'
+  'rgba(41, 255, 218, 0.8)',
+    'rgba(1, 196, 231, 0.8)',
+    'rgba(248, 45, 151, 0.8)'
   ];
 
   // Colores base para las barras del gráfico de barras
   const baseColorsBar = [
-    'rgba(255, 206, 86, 0.3)', // Amarillo
-    'rgba(153, 102, 255, 0.3)', // Morado
-    'rgba(255, 159, 64, 0.3)'   // Naranja
+    'rgba(41, 255, 218, 0.4)',
+    'rgba(1, 196, 231, 0.4)',
+    'rgba(248, 45, 151, 0.4)'   // Naranja
   ];
 
   // Colores intensos al pasar el cursor para el gráfico de barras
   const hoverColorsBar = [
-    'rgba(255, 206, 86, 0.6)', // Amarillo
-    'rgba(153, 102, 255, 0.6)', // Morado
-    'rgba(255, 159, 64, 0.6)'   // Naranja
+    'rgba(41, 255, 218, 0.8)',
+    'rgba(1, 196, 231, 0.8)',
+    'rgba(248, 45, 151, 0.8)'   // Naranja
   ];
 
   // Colores de los bordes para el gráfico polar
@@ -345,38 +343,37 @@ updateChart() {
   this.polarChart = new Chart(ctxPolar, {
     type: 'polarArea',
     data: {
-      labels: ['Cargos', 'Abonos', 'Diferencia'],
-      datasets: [
-        {
-          data: [
-            Object.values(this.totalesPorBanco).reduce((acc, curr) => acc + curr.abonos, 0),
-            Object.values(this.totalesPorBanco).reduce((acc, curr) => acc + curr.cargos, 0),
-            Object.values(this.totalesPorBanco).reduce((acc, curr) => acc + curr.saldoFinal, 0)
-          ],
-          backgroundColor: baseColorsPolar,
-          hoverBackgroundColor: hoverColorsPolar,
-          borderColor: borderColorsPolar, // Establecer los colores de borde
-          borderWidth: 1 // Establecer el ancho de los bordes
-        }
-      ]
+      labels: ['Abonos', 'Cargos', 'Diferencia'],
+      datasets: [{
+        data: [
+          Object.values(this.totalesPorBanco).reduce((acc, curr) => acc + curr.abonos, 0),
+          Object.values(this.totalesPorBanco).reduce((acc, curr) => acc + curr.cargos, 0),
+          Object.values(this.totalesPorBanco).reduce((acc, curr) => acc + curr.saldoFinal, 0)
+        ],
+        backgroundColor: baseColorsPolar,
+        hoverBackgroundColor: hoverColorsPolar,
+        borderColor: borderColorsPolar, // Establecer los colores de borde
+        borderWidth: 1 // Establecer el ancho de los bordes
+      }]
     },
     options: {
       plugins: {
         title: {
-        display: true,
-        text: 'Proporción de cargos y abonos (Polar)',
-        font: {
+          display: true,
+          text: '.',
+          font: {
             size: 14,
             weight: 'bold',
             color: this.isDarkMode ? 'rgba(255, 255, 255, 0.6)' : 'rgba(0, 0, 0, 0.6)'
-        }
-      },
+          }
+        },
         legend: {
           labels: {
             font: {
               size: 12,
               weight: 'bold'
-            }
+            },
+            color: this.isDarkMode ? '#ffffff' : '#000000' // Color de las etiquetas del legend según el modo oscuro
           }
         }
       },
@@ -390,54 +387,60 @@ updateChart() {
     }
   });
 
+
   // Gráfico de barras
   this.barChart = new Chart(ctxBar, {
     type: 'bar',
     data: {
-      labels: ['Cargos', 'Abonos', 'Diferencia'],
-      datasets: [
-        {
-          data: [
-            Object.values(this.totalesPorBanco).reduce((acc, curr) => acc + curr.abonos, 0),
-            Object.values(this.totalesPorBanco).reduce((acc, curr) => acc + curr.cargos, 0),
-            Object.values(this.totalesPorBanco).reduce((acc, curr) => acc + curr.saldoFinal, 0)
-          ],
-          backgroundColor: baseColorsBar,
-          hoverBackgroundColor: hoverColorsBar,
-          borderColor: 'rgba(255, 255, 255, 1)', // Establecer el color de los bordes como blanco
-          borderWidth: 1 // Establecer el ancho de los bordes
-        }
-      ]
+      labels: ['Abonos', 'Cargos', 'Diferencia'],
+      datasets: [{
+        data: [
+          Object.values(this.totalesPorBanco).reduce((acc, curr) => acc + curr.abonos, 0),
+          Object.values(this.totalesPorBanco).reduce((acc, curr) => acc + curr.cargos, 0),
+          Object.values(this.totalesPorBanco).reduce((acc, curr) => acc + curr.saldoFinal, 0)
+        ],
+        backgroundColor: baseColorsBar,
+        hoverBackgroundColor: hoverColorsBar,
+        borderColor: this.isDarkMode ? 'rgba(255, 255, 255, 1)' : 'rgba(0, 0, 0, 1)', // Establecer el color de los bordes según el modo oscuro
+        borderWidth: 1 // Establecer el ancho de los bordes
+      }]
     },
     options: {
       plugins: {
         title: {
-        display: true,
-        text: 'Proporción de cargos y abonos (Barras)',
-        font: {
+          display: true,
+          text: '.',
+          font: {
             size: 14,
             weight: 'bold',
             color: this.isDarkMode ? 'rgba(255, 255, 255, 0.6)' : 'rgba(0, 0, 0, 0.6)'
-        }
-      },
+          }
+        },
         legend: {
           display: false
         }
       },
       scales: {
-        x: {
-          grid: {
-            color: this.isDarkMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)' // Color de la cuadrícula de fondo
-          }
-        },
-        y: {
-          grid: {
-            color: this.isDarkMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)' // Color de la cuadrícula de fondo
+          x: {
+            grid: {
+              color: this.isDarkMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)', // Color de la cuadrícula de fondo
+            },
+            ticks: {
+              color: this.isDarkMode ? '#ffffff' : '#000000' // Color de las etiquetas del eje x según el modo oscuro
+            }
+          },
+          y: {
+            grid: {
+              color: this.isDarkMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)', // Color de la cuadrícula de fondo
+            },
+            ticks: {
+              color: this.isDarkMode ? '#ffffff' : '#000000' // Color de las etiquetas del eje y según el modo oscuro
+            }
           }
         }
-      }
     }
   });
+
 },
 
 
@@ -699,12 +702,14 @@ th {
 .dark-mode {
   background-color: #333; /* Color de fondo oscuro */
   color: #fff; /* Color de texto blanco */
+  width: 100vw;
 }
 
 .dark-mode-select,
 .dark-mode-input {
   background-color: #444; /* Color de fondo oscuro para select e input */
   color: #fff; /* Color de texto blanco para select e input */
+
 }
 .dark-mode-table {
   color: #fff; /* Color del texto en modo oscuro */
@@ -746,6 +751,23 @@ th {
 .dark-mode-saldo-anterior-table th {
   background-color: #555; /* Color de fondo de los encabezados en modo oscuro */
   color: #fff; /* Color del texto de los encabezados en modo oscuro */
+}
+.dark-mode .tabla-totales {
+  background-color: #333; /* Fondo oscuro */
+  color: #fff; /* Texto blanco */
+  border-collapse: collapse; /* Colapso de bordes */
+  width: 100%; /* Ancho completo */
+}
+
+.dark-mode .tabla-totales th,
+.dark-mode .tabla-totales td {
+  border: 1px solid #fff; /* Borde blanco */
+  padding: 8px; /* Espaciado interno */
+  text-align: center; /* Alineación centrada */
+}
+
+.dark-mode .tabla-totales th {
+  background-color: #555; /* Color de fondo para encabezados */
 }
 
 </style>
