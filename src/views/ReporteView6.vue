@@ -67,13 +67,16 @@
       </tbody>
     </table>
     </div>
-     <!-- Contenedor para el gráfico de pastel -->
-     <div style="float: left; width: 45%; height: 600px;">
-      <canvas id="pieChart"></canvas>
-    </div>
-    <!-- Contenedor para el gráfico de barras -->
-    <div style="float: right; width: 45%; height: 700px;">
-      <canvas id="barChart"></canvas>
+    <!-- Contenedor principal -->
+    <div style="display: flex; justify-content: center; height: 500px;">
+      <!-- Contenedor para el gráfico de pastel -->
+      <div style="width: 50%; align-items: center;">
+        <canvas id="pieChart"></canvas>
+      </div>
+      <!-- Contenedor para el gráfico de barras -->
+      <div style="width: 50%;align-items: center;">
+        <canvas id="barChart"></canvas>
+      </div>
     </div>
 
 
@@ -106,7 +109,7 @@ export default {
 
   methods: {
     async cargarEstaciones() {
-      const url = 'http://gasserver.dyndns.org:8081/admin/get.php/estaciones';
+      const url = 'http://192.168.1.68/admin/get.php/estaciones';
       try {
         const response = await axios.get(url);
         this.estaciones = response.data.data.reduce((acc, item) => {
@@ -121,7 +124,7 @@ export default {
       if (this.turnoInicio && this.turnoFin && this.dbm) {
         const turnoInicioInt = parseInt(this.turnoInicio);
         const turnoFinInt = parseInt(this.turnoFin);
-        const url = `http://gasserver.dyndns.org:8081/admin/get.php/periodoturno`;
+        const url = `http://192.168.1.68/admin/get.php/periodoturno`;
 
         const params = {
           turnoInicio: turnoInicioInt,
@@ -191,7 +194,7 @@ export default {
     this.pieChart.destroy();
   }
   this.pieChart = new Chart(ctxPie, {
-    type: 'pie',
+    type: 'doughnut',
     data: {
       labels: labelsPie,
       datasets: [{

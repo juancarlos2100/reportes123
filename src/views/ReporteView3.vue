@@ -6,22 +6,22 @@
     <h1>Reporte Operativo</h1>
     <h2> Saldos Proveedores</h2>
     <div>
-    <form @submit.prevent="filtrarDatos">
-
+      <form @submit.prevent="filtrarDatos">
       <label for="estacion" style="font-size: 24px; font-weight: bold; padding-right: 10px; font-family: Arial, sans-serif;">Estación:</label>
-      <select id="estacion" v-model="dbm" class="form-select" :class="{ 'dark-mode-select': isDarkMode }" style="width: 400px; height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;">
+      <select id="estacion" v-model="dbm" class="form-select" :class="{ 'dark-mode-select': isDarkMode }" style="width: 400px; height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;" required>
+        <option disabled value="">Selecciona una estación</option>
         <option v-for="(nombre, id) in estaciones" :key="id" :value="id">{{ nombre }}</option>
       </select>
 
       <label for="fechaInicio" style="font-size: 24px; font-weight: bold; padding-right: 10px; font-family: Arial, sans-serif;" >Fecha de Inicio:</label>
-      <input type="date" v-model="fechaInicio"  class="form-select" :class="{ 'dark-mode-select': isDarkMode }" style="width: 150px; height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;">
-      
-      <label for="fechaFin" style="font-size: 24px; font-weight: bold; padding-right: 10px; font-family: Arial, sans-serif;">Fecha de Fin:</label>
-      <input type="date" v-model="fechaFin"  class="form-select" :class="{ 'dark-mode-select': isDarkMode }" style="width: 150px; height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;">
+      <input type="date" v-model="fechaInicio"  class="form-select" :class="{ 'dark-mode-select': isDarkMode }" style="width: 150px; height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;" required :disabled="!dbm">
 
+      <label for="fechaFin" style="font-size: 24px; font-weight: bold; padding-right: 10px; font-family: Arial, sans-serif;">Fecha de Fin:</label>
+      <input type="date" v-model="fechaFin"  class="form-select" :class="{ 'dark-mode-select': isDarkMode }" style="width: 150px; height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;" required :disabled="!fechaInicio">
 
       <button class="boton-filtrar" type="submit">Filtrar</button>
-    </form>
+      </form>
+
     <button class="boton-descargar" @click="downloadPDF">Descargar PDF</button>
     <button class="boton-descargar" @click="exportExcel">Descargar XLS</button>
 
@@ -31,6 +31,22 @@
       <!-- Lado izquierdo -->
       <div class="left-container" style="flex: 0 0 55%; overflow: auto;">
         <h1>Transacciones Registradas</h1>
+                  <!-- Nueva tabla para mostrar el Saldo Anterior -->
+                  <table :class="{ 'saldo-anterior-table': !isDarkMode, 'dark-mode-saldo-anterior-table': isDarkMode }" style="margin-bottom: 2px; text-align: right;">
+          <thead>
+            <tr>
+              <th style="text-align: right;">Saldo Anterior</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-if="resultados.length > 0"> <!-- Verificamos si hay resultados en la tabla principal -->
+              <td style="text-align: right;">${{ (resultados[0].saldo - resultados[0].monto).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
+            </tr>
+            <tr v-else>
+              <td colspan="2">No hay transacciones registradas</td>
+            </tr>
+          </tbody>
+        </table>
         <table :class="{ 'table': !isDarkMode, 'dark-mode-table': isDarkMode }">
           <thead>
             <tr>
@@ -125,7 +141,7 @@ export default {
   },
   methods: {
     async cargarEstaciones() {
-      const url = 'http://gasserver.dyndns.org:8081/admin/get.php/estaciones';
+      const url = 'http://192.168.1.68/admin/get.php/estaciones';
       try {
         const response = await axios.get(url);
         this.estaciones = response.data.data.reduce((acc, item) => {
@@ -138,10 +154,10 @@ export default {
     },
     async filtrarDatos() {
       if (this.fechaInicio && this.fechaFin && this.dbm) {
-        const url = "http://gasserver.dyndns.org:8081/admin/get.php/saldospipas";
+        const url = "http://192.168.1.68/admin/get.php/saldospipas";
         const params = {
-          fechaInicio: this.fechaInicio,
-          fechaFin: this.fechaFin,
+          fechaInicio: `${this.fechaInicio}T00:00:00`,
+          fechaFin: `${this.fechaFin}T12:00:00`,
           dbm: parseInt(this.dbm)
         };
 
@@ -160,6 +176,7 @@ export default {
         this.mostrarResultados = false;
       }
     },
+
     calcularTotalesPorNombre() {
     this.totalesPorNombre = this.resultados.reduce((totales, adeudo) => {
       const nombre = adeudo['nombre'];
@@ -252,7 +269,7 @@ export default {
         scales: {
           x: {
             grid: {
-              color: this.isDarkMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)' // Color de la cuadrícula de fondo
+              color: this.isDarkMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.1)' // Color de la cuadrícula de fondo
             },
             ticks: {
               color: this.isDarkMode ? '#ffffff' : '#000000' // Color de las etiquetas del eje x según el modo oscuro
@@ -260,7 +277,7 @@ export default {
           },
           y: {
             grid: {
-              color: this.isDarkMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)' // Color de la cuadrícula de fondo
+              color: this.isDarkMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.1)' // Color de la cuadrícula de fondo
             },
             ticks: {
               color: this.isDarkMode ? '#ffffff' : '#000000' // Color de las etiquetas del eje y según el modo oscuro
@@ -331,7 +348,7 @@ export default {
         scales: {
           x: {
             grid: {
-              color: this.isDarkMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)', // Color de la cuadrícula de fondo
+              color: this.isDarkMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.1)', // Color de la cuadrícula de fondo
             },
             ticks: {
               color: this.isDarkMode ? '#ffffff' : '#000000' // Color de las etiquetas del eje x según el modo oscuro
@@ -339,7 +356,7 @@ export default {
           },
           y: {
             grid: {
-              color: this.isDarkMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)', // Color de la cuadrícula de fondo
+              color: this.isDarkMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.1)', // Color de la cuadrícula de fondo
             },
             ticks: {
               color: this.isDarkMode ? '#ffffff' : '#000000' // Color de las etiquetas del eje y según el modo oscuro
@@ -536,7 +553,6 @@ agruparPorSemana(resultados) {
 
 
   },
-
 
 
   mounted() {
@@ -769,6 +785,44 @@ th {
 .dark-mode .tabla-totales th {
   background-color: #555; /* Color de fondo para encabezados */
 }
+.dark-mode-saldo-anterior-table {
+  color: #fff; /* Color del texto en modo oscuro */
+  background-color: #333; /* Color de fondo en modo oscuro */
+  border-collapse: collapse; /* Colapsar los bordes de la tabla */
+  width: 95%; /* Ancho de la tabla */
+  margin-bottom: 2px; /* Margen inferior */
+  text-align: right; /* Alineación del texto a la derecha */
+  margin-left: 20px;
+}
+
+.dark-mode-saldo-anterior-table th,
+.dark-mode-saldo-anterior-table td {
+  border: 1px solid #ddd; /* Borde de las celdas en modo oscuro */
+  padding: 8px; /* Espaciado interno de las celdas */
+}
+
+.dark-mode-saldo-anterior-table th {
+  background-color: #555; /* Color de fondo de los encabezados en modo oscuro */
+  color: #fff; /* Color del texto de los encabezados en modo oscuro */
+}
+.dark-mode .tabla-totales {
+  background-color: #333; /* Fondo oscuro */
+  color: #fff; /* Texto blanco */
+  border-collapse: collapse; /* Colapso de bordes */
+  width: 100%; /* Ancho completo */
+}
+
+.dark-mode .tabla-totales th,
+.dark-mode .tabla-totales td {
+  border: 1px solid #fff; /* Borde blanco */
+  padding: 8px; /* Espaciado interno */
+  text-align: center; /* Alineación centrada */
+}
+
+.dark-mode .tabla-totales th {
+  background-color: #555; /* Color de fondo para encabezados */
+}
+
 </style>
 
 
