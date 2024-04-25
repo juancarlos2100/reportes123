@@ -718,7 +718,8 @@ th {
 .dark-mode {
   background-color: #333; /* Color de fondo oscuro */
   color: #fff; /* Color de texto blanco */
-  width: 100vw;
+  width: 110vw;
+  min-height: 100vh;
 }
 
 .dark-mode-select,

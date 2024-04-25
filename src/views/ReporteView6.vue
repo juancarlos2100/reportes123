@@ -42,7 +42,7 @@
           <td>{{ parseFloat(adeudo['inicio']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
           <td>{{ parseFloat(adeudo['compras']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
           <td>{{ parseFloat(adeudo['jarras']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
-          <td>${{ parseFloat(adeudo['ventas']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
+          <td>{{ parseFloat(adeudo['ventas']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
           <td>${{ parseFloat(adeudo['precio']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
           <td>${{ parseFloat(adeudo['importe']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
           <td>{{ parseFloat(adeudo['fin']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
@@ -56,7 +56,7 @@
           <td><strong>{{ sumarColumna('inicio').toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
           <td><strong>{{ sumarColumna('compras').toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
           <td><strong>{{ sumarColumna('jarras').toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
-          <td><strong>${{ sumarColumna('ventas').toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
+          <td><strong>{{ sumarColumna('ventas').toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
           <td>. </td>
           <td><strong>{{ sumarColumna('ventas').toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
           <td><strong>{{ sumarColumna('fin').toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
@@ -484,8 +484,8 @@ th {
 .dark-mode {
   background-color: #333; /* Color de fondo oscuro */
   color: #fff; /* Color de texto blanco */
-  height: 110vh;
-  width: 100vw;
+  width: 110vw;
+  min-height: 100vh;
 }
 .dark-mode-select,
 .dark-mode-input {
