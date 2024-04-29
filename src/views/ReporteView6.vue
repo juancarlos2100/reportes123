@@ -4,7 +4,7 @@
       <img class="imagen-encabezado" src="@/assets/logok.png" alt="Descripción de la imagen">
     </header>
     <h1>Reporte Operativo</h1>
-    <h2>Ventas Periodo</h2>
+    <h2>Ventas Periodo Turno</h2>
     <form @submit.prevent="filtrarDatos">
       <label for="estacion" style="font-size: 24px; font-weight: bold; padding-right: 10px; font-family: Arial, sans-serif;">Estación:</label>
       <select id="estacion" v-model="dbm" class="form-select" :class="{ 'dark-mode-select': isDarkMode }" style="width: 400px; height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;">
@@ -484,7 +484,6 @@ th {
 .dark-mode {
   background-color: #333; /* Color de fondo oscuro */
   color: #fff; /* Color de texto blanco */
-  width: 110vw;
   min-height: 100vh;
 }
 .dark-mode-select,

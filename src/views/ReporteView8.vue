@@ -12,6 +12,11 @@
        <option disabled value="">Selecciona una estación</option>
        <option v-for="(nombre, id) in estaciones" :key="id" :value="id">{{ nombre }}</option>
      </select>
+     <label for="proveedor" style="font-size: 24px; font-weight: bold; padding-right: 10px; font-family: Arial, sans-serif;">Proveedor:</label>
+      <select id="proveedor" v-model="idProveedor" class="form-select" :class="{ 'dark-mode-select': isDarkMode }" style="width: 400px; height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;" required>
+        <option disabled value="">Selecciona un proveedor</option>
+        <option v-for="proveedor in proveedores" :key="proveedor.id" :value="proveedor.id">{{ proveedor.nombre }}</option>
+      </select>
 
      <label for="fechaInicio" style="font-size: 24px; font-weight: bold; padding-right: 10px; font-family: Arial, sans-serif;" >Fecha de Inicio:</label>
      <input type="date" v-model="fechaInicio"  class="form-select" :class="{ 'dark-mode-select': isDarkMode }" style="width: 150px; height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;" required :disabled="!dbm">
@@ -102,89 +107,116 @@
 <script>
 import axios from "axios";
 
-
 export default {
- data() {
-   return {
-     isDarkMode: true, // Variable para controlar el modo oscuro
-     resultados: [],
-     resultadosOriginales: [], // Nuevo atributo
-     idTipo: null,
-     estatus: null,
-     fechaInicio: null,
-     fechaFin: null,
-     dbm: null, // Nuevo atributo para la estación
-     estaciones: {},
-     totalesPorNombre: {},
-     mostrarResultados: false
-   };
- },
- methods: {
-   async cargarEstaciones() {
-     const url = 'http://gasserver.dyndns.org:8081/admin/get.php/estaciones';
-     try {
-       const response = await axios.get(url);
-       this.estaciones = response.data.data.reduce((acc, item) => {
-         acc[item.id_dbm] = `${item.id_dbm} - ${item.nombre}`;
-         return acc;
-       }, {});
-     } catch (error) {
-       console.error("Error al obtener las estaciones:", error);
-     }
-   },
-   async filtrarDatos() {
-     if (this.fechaInicio && this.fechaFin && this.dbm) {
-       const url = "http://gasserver.dyndns.org:8081/admin/get.php/saldospipas";
-       const params = {
-         fechaInicio: `${this.fechaInicio}T00:00:00`,
-         fechaFin: `${this.fechaFin}T12:00:00`,
-         dbm: parseInt(this.dbm)
-       };
+  data() {
+    return {
+      isDarkMode: true,
+      resultados: [],
+      resultadosOriginales: [],
+      idTipo: null,
+      estatus: null,
+      fechaInicio: null,
+      fechaFin: null,
+      dbm: null,
+      estaciones: {},
+      totalesPorNombre: {},
+      mostrarResultados: false,
+      proveedores: [],
+      idProveedor: null,
+    };
+  },
+  methods: {
+    async cargarEstaciones() {
+      const url = 'http://gasserver.dyndns.org:8081/admin/get.php/estaciones';
+      try {
+        const response = await axios.get(url);
+        this.estaciones = response.data.data.reduce((acc, item) => {
+          acc[item.id_dbm] = `${item.id_dbm} - ${item.nombre}`;
+          return acc;
+        }, {});
+      } catch (error) {
+        console.error("Error al obtener las estaciones:", error);
+      }
+    },
+    async cargarProveedores() {
+      if (this.dbm) {
+        const url = `http://192.168.1.68/admin/get.php/provedores?dbm=${this.dbm}`;
+        try {
+          const response = await axios.get(url);
+          if (response.data.success) {
+            this.proveedores = response.data.data.map(proveedor => ({
+              id: proveedor.id_proveedor,
+              nombre: proveedor.nombre
+            }));
+          } else {
+            console.error("Error en la respuesta del servicio de proveedores:", response.data.message);
+          }
+        } catch (error) {
+          console.error("Error al obtener los proveedores:", error);
+        }
+      } else {
+        console.error("Por favor, selecciona una estación.");
+      }
+    },
+    async filtrarDatos() {
+  if (this.fechaInicio && this.fechaFin && this.dbm && this.idProveedor) {
+    const url = "http://192.168.1.68/admin/get.php/saldospipas";
+    const params = {
+      fechaInicio: `${this.fechaInicio}T00:00:00`,
+      fechaFin: `${this.fechaFin}T12:00:00`,
+      dbm: parseInt(this.dbm),
+      proveedor: parseInt(this.idProveedor) // Usar 'proveedor' en lugar de 'idProveedor'
+    };
+    try {
+      const response = await axios.get(url, { params });
+      const nuevosResultados = response.data.data;
+      this.resultadosOriginales.push(...nuevosResultados);
+      this.resultados.push(...nuevosResultados);
+      this.calcularTotalesPorNombre();
+      this.mostrarResultados = true;
+    } catch (error) {
+      console.error("Error al obtener datos de la API:", error);
+    }
+  } else {
+    // Manejo si no se selecciona una estación, un proveedor o no se proporcionan fechas
+    this.resultados = [];
+    this.mostrarResultados = false;
+  }
+},
 
-       try {
-         const response = await axios.get(url, { params });
-         this.resultadosOriginales = response.data.data;
-         this.resultados = [...this.resultadosOriginales];
-         this.calcularTotalesPorNombre();
-         this.mostrarResultados = true;
-       } catch (error) {
-         console.error("Error al obtener datos de la API:", error);
-       }
-     } else {
-       // Manejo si no se selecciona una estación o no se proporcionan fechas
-       this.resultados = [];
-       this.mostrarResultados = false;
-     }
-   },
-
-   calcularTotalesPorNombre() {
-   this.totalesPorNombre = this.resultados.reduce((totales, adeudo) => {
-     const nombre = adeudo['nombre'];
-     if (!totales[nombre]) {
-       totales[nombre] = { cargos: 0, abonos: 0, diferencia: 0, saldo: 0 };
-     }
-     totales[nombre].cargos += Math.abs(Number(adeudo['cargo']));
-     totales[nombre].abonos += Number(adeudo['abono']);
-     totales[nombre].saldo += Number(adeudo['saldo']);
-     totales[nombre].diferencia = Math.abs(totales[nombre].abonos - totales[nombre].cargos);
-     return totales;
-   }, {});
- },
-
-
-
-
- },
-
-
- mounted() {
-   this.cargarEstaciones();
- }
-
- 
+    calcularTotalesPorNombre() {
+      this.totalesPorNombre = this.resultados.reduce((totales, adeudo) => {
+        const nombre = adeudo['nombre'];
+        if (!totales[nombre]) {
+          totales[nombre] = { cargos: 0, abonos: 0, diferencia: 0, saldo: 0 };
+        }
+        totales[nombre].cargos += Math.abs(Number(adeudo['cargo']));
+        totales[nombre].abonos += Number(adeudo['abono']);
+        totales[nombre].saldo += Number(adeudo['saldo']);
+        totales[nombre].diferencia = Math.abs(totales[nombre].abonos - totales[nombre].cargos);
+        return totales;
+      }, {});
+    },
+  },
+  mounted() {
+    this.cargarEstaciones();
+  },
+  watch: {
+    dbm(newDbm) {
+      if (newDbm) {
+        this.cargarProveedores();
+      }
+    },
+    idProveedor(newIdProveedor) {
+      if (newIdProveedor) {
+        this.filtrarDatos();
+      }
+    },
+  },
 };
-
 </script>
+
+
 
 
 

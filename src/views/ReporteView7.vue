@@ -4,7 +4,7 @@
       <img class="imagen-encabezado" src="@/assets/logok.png" alt="Descripción de la imagen">
     </header>
     <h1>Reporte Operativo</h1>
-    <h2>Ventas Periodo</h2>
+    <h2>Ventas Inventario Diario </h2>
     <form @submit.prevent="filtrarDatos">
       <label for="estacion" style="font-size: 24px; font-weight: bold; padding-right: 10px; font-family: Arial, sans-serif;">Estación:</label>
       <select id="estacion" v-model="dbm" class="form-select" :class="{ 'dark-mode-select': isDarkMode }" style="width: 400px; height: 40px;margin-right: 10px;font-size: 20px;font-family: Arial, sans-serif;">
@@ -64,21 +64,104 @@
           </tr>
           <!-- Calcular y mostrar fila extra para total -->
           <tr>
-            <td>Total</td>
+            <td><strong>TOTAL</strong></td>
             <td></td>
             <td></td>
-            <td>{{ parseFloat(grupo.total.inicial).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
-            <td>{{ parseFloat(grupo.total.compra).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
-            <td>{{ parseFloat(grupo.total.jarras).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
-            <td>{{ parseFloat(grupo.total.venta).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
-            <td>{{ parseFloat(grupo.total.ventastanque).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
-            <td>{{ parseFloat(grupo.total.final).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
-            <td>{{ parseFloat(grupo.total.fincalculado).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
-            <td>{{ parseFloat(grupo.total.diferencia).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
-            <td>{{ parseFloat(grupo.total.merma).toFixed(2) }}</td>
+            <td><strong>{{ parseFloat(grupo.total.inicial).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
+            <td><strong>{{ parseFloat(grupo.total.compra).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
+            <td><strong>{{ parseFloat(grupo.total.jarras).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
+            <td><strong>{{ parseFloat(grupo.total.venta).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
+            <td><strong>{{ parseFloat(grupo.total.ventastanque).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
+            <td><strong>{{ parseFloat(grupo.total.final).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
+            <td><strong>{{ parseFloat(grupo.total.fincalculado).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
+            <td><strong>{{ parseFloat(grupo.total.diferencia).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
+            <td><strong>{{ parseFloat(grupo.total.merma).toFixed(2) }}</strong></td>
           </tr>
         </tbody>
       </table>
+    </div>
+    <div>
+      
+    </div>
+    <div>
+      <br>
+      <!-- Iterar sobre los datos agrupados por producto -->
+<div v-for="(grupo, index) in totalPorProducto" :key="index">
+  <h1 style="text-align: right; margin-right: 100px;">{{ grupo.nombre }}</h1>
+  <!-- Tabla para cada producto -->
+  <table :class="{ 'table': !isDarkMode, 'dark-mode-table': isDarkMode }" style="margin-left: 170px; width: 87%">
+    <thead>
+      <tr>
+        <!--<th>ID</th> -->
+        <th>Nombre del Producto</th>
+        <th>Inicial</th>
+        <th>Compra</th>
+        <th>Jarras</th>
+        <th>Venta</th>
+        <th>Ventas Tanque</th>
+        <th>Final</th>
+        <th>Fin Calculado</th>
+        <th>Diferencia</th>
+        <th>Merma</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Mostrar el total para el producto -->
+      <tr>
+         <!--<td><strong>{{ grupo.id }}</strong></td> -->
+        <td><strong>{{ grupo.nombre }}</strong></td>
+        <td><strong>{{ parseFloat(grupo.total['inicial']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
+        <td><strong>{{ parseFloat(grupo.total['compra']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
+        <td><strong>{{ parseFloat(grupo.total['jarras']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
+        <td><strong>{{ parseFloat(grupo.total['venta']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
+        <td><strong>{{ parseFloat(grupo.total['ventastanque']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
+        <td><strong>{{ parseFloat(grupo.total['final']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
+        <td><strong>{{ parseFloat(grupo.total['fincalculado']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
+        <td><strong>{{ parseFloat(grupo.total['diferencia']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
+        <td><strong>{{ parseFloat(grupo.total['merma']).toFixed(2) }}</strong></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+    </div>
+    <div>
+    <!-- Tabla para el total general -->
+    <h1 style="text-align: right; margin-right: 100px;">Total General</h1>
+    <table :class="{ 'table': !isDarkMode, 'dark-mode-table': isDarkMode } " style="margin-left: 500px; width: 71%">
+      <thead>
+        <tr>
+
+          <th>Inicial</th>
+          <th>Compra</th>
+          <th>Jarras</th>
+          <th>Venta</th>
+          <th>Ventas Tanque</th>
+          <th>Final</th>
+          <th>Fin Calculado</th>
+          <th>Diferencia</th>
+          <th>Merma</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+
+          <td><strong>{{ parseFloat(totalGeneral.inicial).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
+          <td><strong>{{ parseFloat(totalGeneral.compra).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
+          <td><strong>{{ parseFloat(totalGeneral.jarras).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
+          <td><strong>{{ parseFloat(totalGeneral.venta).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
+          <td><strong>{{ parseFloat(totalGeneral.ventastanque).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
+          <td><strong>{{ parseFloat(totalGeneral.final).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
+          <td><strong>{{ parseFloat(totalGeneral.fincalculado).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
+          <td><strong>{{ parseFloat(totalGeneral.diferencia).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
+          <td><strong>{{ parseFloat(totalGeneral.merma).toFixed(2) }}</strong></td>
+        </tr>
+      </tbody>
+    </table>
+    <br>
+    <br>
+
+
     </div>
     <!-- Contenedor para los gráficos -->
   </div>
@@ -103,10 +186,32 @@ export default {
       turnoFin: null,
       estaciones: {},
       pieChart: null,
-      barChart: null
+      barChart: null,
+      totalGeneral: {},
+
     };
   },
   computed: {
+      totalPorProducto() {
+      const totalPorProducto = [];
+      const agrupadosPorId = this.productosIndividuales.reduce((acc, producto) => {
+        const id = producto.id;
+        if (!acc[id]) {
+          acc[id] = { productos: [], nombre: producto.producto };
+        }
+        acc[id].productos.push(producto);
+        return acc;
+      }, {});
+
+      for (const id in agrupadosPorId) {
+        const productos = agrupadosPorId[id].productos;
+        const nombre = agrupadosPorId[id].nombre;
+        const total = this.calcularTotal(productos);
+        totalPorProducto.push({ id, nombre, productos, total });
+      }
+
+      return totalPorProducto;
+    },
     productosPorDia() {
       const productosPorDia = [];
       const grouped = this.productosIndividuales.reduce((acc, producto) => {
@@ -145,7 +250,7 @@ export default {
         const url = "http://192.168.1.68/admin/get.php/inventariodiario";
         const params = {
           fechaInicio: `${this.fechaInicio}T00:00:00`,
-          fechaFin: `${this.fechaFin}T12:00:00`,
+          fechaFin: `${this.fechaFin}T23:59:00`,
           dbm: parseInt(this.dbm)
         };
 
@@ -157,6 +262,7 @@ export default {
           this.total = this.productosIndividuales.find(item => item.id === 'total');
           // Filtrar los productos individuales
           this.productosIndividuales = this.productosIndividuales.filter(item => item.id !== 'total');
+          this.calcularTotalGeneral();
 
           // Actualizar los gráficos
           //this.updateChart();
@@ -180,75 +286,135 @@ export default {
 
       return total;
     },
-    async downloadPDF() {
-    let doc = new jsPDF('l', 'pt', 'letter');
+    calcularTotalGeneral() {
+    let totalGeneral = {
+      inicial: 0,
+      compra: 0,
+      jarras: 0,
+      venta: 0,
+      ventastanque: 0,
+      final: 0,
+      fincalculado: 0,
+      diferencia: 0,
+      merma: 0
+    };
 
-    // Título del reporte con periodo de fechas y banco seleccionado
-    const titulo = `Ventas-Periodo por fecha - Estación: ${this.estaciones[this.dbm]}  \n Del (${this.fechaInicio} al ${this.fechaFin})`;
-    doc.text(titulo, doc.internal.pageSize.getWidth() / 2, 25, { align: 'center', fontStyle: 'bold' });
-
-    // Iterar sobre los datos agrupados por día
-    let posY = 60; // Posición vertical inicial para las tablas
     this.productosPorDia.forEach(grupo => {
-      // Agregar título para cada día
-      doc.text(grupo.fecha, doc.internal.pageSize.getWidth() / 2, posY + 25, { align: 'center' }); // Centra la fecha
+    for (const key in grupo.total) {
+      // Usar call para acceder a hasOwnProperty de una manera segura
+      if (Object.prototype.hasOwnProperty.call(totalGeneral, key)) {
+        totalGeneral[key] += parseFloat(grupo.total[key]);
+      }
+    }
+  });
 
-      // Generar tabla para cada día
-      const transaccionesTableData = [];
-      grupo.productos.forEach(adeudo => {
-        const rowData = [
-          adeudo['fecha'],
-          adeudo['id'],
-          adeudo['producto'],
-          parseFloat(adeudo['inicial']).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-          parseFloat(adeudo['compra']).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-          parseFloat(adeudo['jarras']).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-          parseFloat(adeudo['venta']).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-          parseFloat(adeudo['ventastanque']).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-          parseFloat(adeudo['final']).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-          parseFloat(adeudo['fincalculado']).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-          parseFloat(adeudo['diferencia']).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-          parseFloat(adeudo['merma']).toFixed(2)
-        ];
-        transaccionesTableData.push(rowData);
+    this.totalGeneral = totalGeneral;
+  },
+    async downloadPDF() {
+      let doc = new jsPDF('l', 'pt', 'letter');
+      let posY = 25; // Posición vertical inicial para los elementos en el PDF
+
+      // Título del reporte con periodo de fechas y banco seleccionado
+      const titulo = `Ventas-Inventario Diario - Estación: ${this.estaciones[this.dbm]}  \n Del ${this.fechaInicio} al ${this.fechaFin}`;
+      doc.setFontSize(16);
+      doc.text(titulo, doc.internal.pageSize.getWidth() / 2, posY, { align: 'center', fontStyle: 'bolder' });
+      posY += 40; // Ajustar la posición vertical y añadir margen
+
+      // Iterar sobre los datos agrupados por día
+      this.productosPorDia.forEach(grupo => {
+          // Agregar título para cada día
+          doc.setFontSize(16);
+          doc.text(grupo.fecha, doc.internal.pageSize.getWidth() / 2, posY, { align: 'center', fontStyle: 'bold' });
+          posY += 30; // Ajustar la posición vertical
+
+          // Generar tabla para cada día
+          const transaccionesTableData = [];
+          grupo.productos.forEach(adeudo => {
+              const rowData = [
+                  adeudo['fecha'],
+                  adeudo['id'],
+                  adeudo['producto'],
+                  parseFloat(adeudo['inicial']).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                  parseFloat(adeudo['compra']).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                  parseFloat(adeudo['jarras']).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                  parseFloat(adeudo['venta']).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                  parseFloat(adeudo['ventastanque']).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                  parseFloat(adeudo['final']).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                  parseFloat(adeudo['fincalculado']).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                  parseFloat(adeudo['diferencia']).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                  parseFloat(adeudo['merma']).toFixed(2)
+              ];
+              transaccionesTableData.push(rowData);
+          });
+
+          // Agregar tabla de transacciones para cada día al PDF
+          autoTable(doc, {
+              head: [['fecha', 'id', 'producto', 'inicial', 'compra', 'jarras', 'venta', 'ventastanque', 'final', 'fincalculado', 'diferencia', 'merma']],
+              body: transaccionesTableData,
+              startY: posY, // Ajustar la posición vertical
+              headStyles: { fillColor: '#D3D3D3', textColor: '#000000' }
+          });
+
+          posY = doc.lastAutoTable.finalY + 40; // Actualizar la posición vertical para la siguiente tabla y añadir margen
       });
 
-      // Agregar fila extra para total
-      const totalRow = [
-        'Total',
-        '',
-        '',
-        parseFloat(grupo.total.inicial).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-        parseFloat(grupo.total.compra).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-        parseFloat(grupo.total.jarras).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-        parseFloat(grupo.total.venta).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-        parseFloat(grupo.total.ventastanque).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-        parseFloat(grupo.total.final).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-        parseFloat(grupo.total.fincalculado).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-        parseFloat(grupo.total.diferencia).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-        parseFloat(grupo.total.merma).toFixed(2)
-      ];
-      transaccionesTableData.push(totalRow);
+      // Iterar sobre los datos agrupados por producto
+      this.totalPorProducto.forEach(grupo => {
+          // Agregar título para cada producto
+          doc.setFontSize(18);
+          doc.text(grupo.nombre, doc.internal.pageSize.getWidth() / 2, posY, { align: 'center', fontStyle: 'bold' });
+          posY += 30; // Ajustar la posición vertical
 
-      // Agregar tabla de transacciones para cada día al PDF
+          // Generar tabla para cada producto
+          autoTable(doc, {
+              head: [['Nombre del Producto', 'Inicial', 'Compra', 'Jarras', 'Venta', 'Ventas Tanque', 'Final', 'Fin Calculado', 'Diferencia', 'Merma']],
+              body: [[
+                  grupo.nombre,
+                  parseFloat(grupo.total['inicial']).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                  parseFloat(grupo.total['compra']).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                  parseFloat(grupo.total['jarras']).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                  parseFloat(grupo.total['venta']).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                  parseFloat(grupo.total['ventastanque']).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                  parseFloat(grupo.total['final']).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                  parseFloat(grupo.total['fincalculado']).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                  parseFloat(grupo.total['diferencia']).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                  parseFloat(grupo.total['merma']).toFixed(2)
+              ]],
+              startY: posY, // Ajustar la posición vertical
+              headStyles: { fillColor: '#D3D3D3', textColor: '#000000' }
+          });
+
+          posY = doc.lastAutoTable.finalY + 40; // Actualizar la posición vertical para la siguiente tabla y añadir margen
+      });
+      doc.setFontSize(18);
+      doc.text('Total General', doc.internal.pageSize.getWidth() / 2, posY, { align: 'center', fontStyle: 'bold' });
+      posY += 30; // Ajustar la posición vertical
+
+      // Agregar tabla para el total general
       autoTable(doc, {
-        head: [['fecha', 'id', 'producto', 'inicial', 'compra', 'jarras', 'venta', 'ventastanque', 'final', 'fincalculado', 'diferencia', 'merma']],
-        body: transaccionesTableData,
-        startY: posY + 45, // Ajusta la posición vertical según la necesidad
-        headStyles: { fillColor: '#D3D3D3', textColor: '#000000' }
+          head: [['Inicial', 'Compra', 'Jarras', 'Venta', 'Ventas Tanque', 'Final', 'Fin Calculado', 'Diferencia', 'Merma']],
+          body: [[
+              parseFloat(this.totalGeneral.inicial).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+              parseFloat(this.totalGeneral.compra).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+              parseFloat(this.totalGeneral.jarras).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+              parseFloat(this.totalGeneral.venta).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+              parseFloat(this.totalGeneral.ventastanque).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+              parseFloat(this.totalGeneral.final).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+              parseFloat(this.totalGeneral.fincalculado).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+              parseFloat(this.totalGeneral.diferencia).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+              parseFloat(this.totalGeneral.merma).toFixed(2)
+          ]],
+          startY: posY, // Ajustar la posición vertical
+          headStyles: { fillColor: '#D3D3D3', textColor: '#000000' }
       });
 
-      posY = doc.lastAutoTable.finalY + 30; // Actualizar la posición vertical para la siguiente tabla
-    });
-
-    // Guardar el PDF
-    doc.save('Reporte_Operativo.pdf');
+      // Guardar el PDF
+      doc.save('Reporte_Operativo.pdf');
   }
 
 
-
-
   },
+
   mounted() {
     this.cargarEstaciones();
   }
@@ -404,7 +570,7 @@ th {
 .dark-mode {
   background-color: #333; /* Color de fondo oscuro */
   color: #fff; /* Color de texto blanco */
-  width: 110vw;
+  width: 100vw;
   min-height: 100vh;
 
 }
@@ -417,9 +583,9 @@ th {
   color: #fff; /* Color del texto en modo oscuro */
   background-color: #333; /* Color de fondo en modo oscuro */
   border-collapse: collapse; /* Colapsar los bordes de la tabla */
-  width: 90%; /* Ancho de la tabla */
+  width: 95%; /* Ancho de la tabla */
   margin-top: 20px; /* Margen superior */
-  margin-bottom: 8px; /* Margen inferior */
+  margin-bottom: 15px; /* Margen inferior */
   margin-left: 20px;
 }
 
