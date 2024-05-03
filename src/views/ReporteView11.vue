@@ -73,12 +73,14 @@
          <canvas id="myBarChart"></canvas>
        </div>
        <!-- Nuevo gráfico de pastel (chart2) -->
-       <div class="chart-container">
-         <h3>Estadistica por Semana</h3>
+       <div class="chart-container2">
+         <h3>Proporción de Cargos y Abonos </h3>
          <canvas id="myPieChart"></canvas>
        </div>
-       <div class="cont-total">
-         <h1>Total por Proveedor</h1>
+       <br>
+       <br>
+        <!--<div class="cont-total">
+          <h1>Total por Proveedor</h1>
          <table :class="{ 'tabla-totales': !isDarkMode, 'dark-mode-table': isDarkMode }">
              <thead>
                <tr>
@@ -97,7 +99,7 @@
                </tr>
              </tbody>
            </table>
-       </div>
+       </div>-->
      </div>
    </div>
      </div>
@@ -106,6 +108,8 @@
 <script>
 import axios from "axios";
 import Chart from 'chart.js/auto';
+import jsPDF from 'jspdf';
+
 
 
 export default {
@@ -208,8 +212,19 @@ export default {
   }
 
   // Define los colores neon para las barras del gráfico
-  const neonBaseColorsBar = ['#FF77FF', '#FFD700', '#00FFFF'];
-  const neonHoverColorsBar = ['#FF66FF', '#FFCC00', '#00CCCC'];
+  const neonBaseColorsBar = [ 'rgba(41, 255, 218, 0.4)',
+                            'rgba(1, 196, 231, 0.4)',
+                            'rgba(248, 45, 151, 0.4)',
+                            'rgba(56, 64, 151, 0.4)',
+                          
+                          ];
+
+  const neonHoverColorsBar = [
+                            'rgba(41, 255, 218, 0.8)',
+                              'rgba(1, 196, 231, 0.8)',
+                              'rgba(248, 45, 151, 0.8)',
+                              'rgba(56, 64, 151, 0.8)',
+                            ];
 
   // Crea un nuevo gráfico de barras
   this.barChart = new Chart(ctxBar, {
@@ -304,7 +319,49 @@ export default {
 
 
   
+},
+async downloadPDF() {
+  // Crear documento PDF
+  let doc = new jsPDF();
+
+  // Título del reporte
+   // Título del informe con periodo de fechas, turno inicial, turno final y estación
+   const titulo = `Saldos Empresas de Reembolso \n Turno Inicial: ${this.turnoInicio} - Turno Final: ${this.turnoFin} \n Estación: ${this.estaciones[this.dbm]} `;
+    doc.text(titulo, doc.internal.pageSize.getWidth() / 2, 10, { align: 'center', fontStyle: 'bold' });
+
+
+  // Obtener datos de la tabla
+  const transaccionesTableData = [];
+  const rows = document.querySelectorAll(".left-container table tbody tr");
+  rows.forEach(row => {
+    const rowData = [];
+    const cells = row.querySelectorAll("td");
+    cells.forEach(cell => {
+      rowData.push(cell.innerText.trim());
+    });
+    transaccionesTableData.push(rowData);
+  });
+
+  // Agregar tabla de transacciones al PDF
+  doc.autoTable({
+    head: [['Cliente', 'Razón Social', 'SaldoInicial', 'Cargos', 'Abonos', 'Final']],
+    body: transaccionesTableData,
+    startY: 50,
+    headStyles: { fillColor: '#D3D3D3', textColor: '#000000' }
+  });
+
+  // Footer del PDF
+  const totalPages = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
+    doc.setFontSize(10);
+    doc.text('Página ' + i + ' de ' + totalPages, doc.internal.pageSize.getWidth() - 80, doc.internal.pageSize.getHeight() - 2);
+  }
+
+  // Guardar el PDF
+  doc.save('Reporte_Transacciones_Registradas.pdf');
 }
+
   
  },
  
@@ -332,6 +389,13 @@ export default {
  height: 500px;
  margin-left: 5px;
  margin-right: 10px;
+}
+.chart-container2 {
+ width: 60%;
+ height: 300px;
+ margin-left: 200px;
+ margin-right: 10px;
+ margin-bottom: 200px;
 }
 
 .table-container {
