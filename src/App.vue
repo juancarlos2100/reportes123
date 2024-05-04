@@ -7,12 +7,12 @@
     <router-link to="/reporte3">Saldos Proveedores</router-link>|
     <router-link to="/reporte4">Cortes</router-link>|
     <router-link to="/reporte5">Clientes por Cobrar</router-link>|
-    <router-link to="/reporte6">Ventas Periodo</router-link>|
-    <router-link to="/reporte7">Inv Aceites</router-link>|
+    <router-link to="/reporte6">VentasPeriodoT</router-link>|
+    <router-link to="/reporte7">Inv Diario</router-link>|
     <router-link to="/reporte8">Reporte9</router-link>|
     <router-link to="/reporte9">DESGLOSE</router-link>|
     <router-link to="/reporte10">Reporte Gastos</router-link>|
-    <router-link to="/reporte11">General Gasolinas</router-link>|
+    <router-link to="/reporte11">Reembolsos</router-link>|
     <router-link to="/reporte12">Reporte Turnos</router-link>|
   </nav>
   <router-view/>

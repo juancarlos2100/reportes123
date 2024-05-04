@@ -79,8 +79,8 @@
        </div>
        <br>
        <br>
-        <!--<div class="cont-total">
-          <h1>Total por Proveedor</h1>
+        <div class="cont-total">
+           <!--<h1>Total por Proveedor</h1>
          <table :class="{ 'tabla-totales': !isDarkMode, 'dark-mode-table': isDarkMode }">
              <thead>
                <tr>
@@ -98,8 +98,8 @@
                  <td>${{ total.diferencia.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</td>
                </tr>
              </tbody>
-           </table>
-       </div>-->
+           </table>>-->
+       </div>
      </div>
    </div>
      </div>
@@ -391,9 +391,9 @@ async downloadPDF() {
  margin-right: 10px;
 }
 .chart-container2 {
- width: 60%;
- height: 300px;
- margin-left: 200px;
+ width: 70%;
+ height: 600px;
+ margin-left: 300px;
  margin-right: 10px;
  margin-bottom: 200px;
 }

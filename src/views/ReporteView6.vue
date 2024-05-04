@@ -58,7 +58,7 @@
           <td><strong>{{ sumarColumna('jarras').toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
           <td><strong>{{ sumarColumna('ventas').toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
           <td>. </td>
-          <td><strong>{{ sumarColumna('ventas').toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
+          <td><strong>{{ sumarColumna('importe').toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
           <td><strong>{{ sumarColumna('fin').toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
           <td><strong>{{ sumarColumna('fin_calculado').toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
           <td><strong>{{ sumarColumna('diferencia').toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
@@ -70,11 +70,11 @@
     <!-- Contenedor principal -->
     <div style="display: flex; justify-content: center; height: 500px;">
       <!-- Contenedor para el gráfico de pastel -->
-      <div style="width: 50%; align-items: center;">
+      <div style="width: 50%; align-items: center; margin-left: 200px;">
         <canvas id="pieChart"></canvas>
       </div>
       <!-- Contenedor para el gráfico de barras -->
-      <div style="width: 50%;align-items: center;">
+      <div style="width: 50%;align-items: center; margin-right: 100px;">
         <canvas id="barChart"></canvas>
       </div>
     </div>
@@ -109,7 +109,7 @@ export default {
 
   methods: {
     async cargarEstaciones() {
-      const url = 'http://192.168.1.68/admin/get.php/estaciones';
+      const url = 'http://gasserver.dyndns.org:8081/admin/get.php/estaciones';
       try {
         const response = await axios.get(url);
         this.estaciones = response.data.data.reduce((acc, item) => {
@@ -124,7 +124,7 @@ export default {
       if (this.turnoInicio && this.turnoFin && this.dbm) {
         const turnoInicioInt = parseInt(this.turnoInicio);
         const turnoFinInt = parseInt(this.turnoFin);
-        const url = `http://192.168.1.68/admin/get.php/periodoturno`;
+        const url = `http://gasserver.dyndns.org:8081/admin/get.php/periodoturno`;
 
         const params = {
           turnoInicio: turnoInicioInt,
@@ -172,20 +172,20 @@ export default {
 
   // Colores base y resaltados para los gráficos
   const baseColors = [
-    'rgba(255, 51, 102, 0.3)', // Rosa neón
-    'rgba(102, 255, 51, 0.3)', // Verde neón
-    'rgba(255, 255, 51, 0.3)', // Amarillo neón
-    'rgba(51, 204, 255, 0.3)', // Azul neón
-    'rgba(204, 102, 255, 0.3)', // Morado neón
-    'rgba(255, 153, 51, 0.3)' // Naranja neón
+    'rgba(255, 51, 102, 0.4)', // Rosa neón
+    'rgba(102, 255, 51, 0.4)', // Verde neón
+    'rgba(255, 255, 51, 0.4)', // Amarillo neón
+    'rgba(51, 204, 255, 0.4)', // Azul neón
+    'rgba(204, 102, 255, 0.4)', // Morado neón
+    'rgba(255, 153, 51, 0.4)' // Naranja neón
   ];
   const neonHoverColors = [
-    'rgba(255, 51, 102, 6)', // Rosa neón
-    'rgba(102, 255, 51, 6)', // Verde neón
-    'rgba(255, 255, 51, 6)', // Amarillo neón
-    'rgba(51, 204, 255, 6)', // Azul neón
-    'rgba(204, 102, 255, 6)', // Morado neón
-    'rgba(255, 153, 51, 6)' // Naranja neón
+    'rgba(255, 51, 102, 8)', // Rosa neón
+    'rgba(102, 255, 51, 8)', // Verde neón
+    'rgba(255, 255, 51, 8)', // Amarillo neón
+    'rgba(51, 204, 255, 8)', // Azul neón
+    'rgba(204, 102, 255, 8)', // Morado neón
+    'rgba(255, 153, 51, 8)' // Naranja neón
   ];
 
   // Crear gráfico de pastel
@@ -214,6 +214,7 @@ export default {
         },
         labels: {
             font: {
+              display: true,
               size: 12,
               weight: 'bold'
             },
