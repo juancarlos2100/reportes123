@@ -140,7 +140,7 @@ export default {
     },
     async cargarProveedores() {
       if (this.dbm) {
-        const url = `http://192.168.1.68/admin/get.php/provedores?dbm=${this.dbm}`;
+        const url = `http://gasserver.dyndns.org:8081/admin/get.php/provedores?dbm=${this.dbm}`;
         try {
           const response = await axios.get(url);
           if (response.data.success) {
@@ -160,7 +160,7 @@ export default {
     },
     async filtrarDatos() {
   if (this.fechaInicio && this.fechaFin && this.dbm && this.idProveedor) {
-    const url = "http://192.168.1.68/admin/get.php/saldospipas";
+    const url = "http://gasserver.dyndns.org:8081/admin/get.php/saldospipas";
     const params = {
       fechaInicio: `${this.fechaInicio}T00:00:00`,
       fechaFin: `${this.fechaFin}T12:00:00`,

@@ -24,6 +24,7 @@
       <button class="boton-filtrar" type="submit">Filtrar</button>
     </form>
     <button class="boton-descargar" @click="downloadPDF">Descargar PDF</button>
+    <button class="boton-descargar" @click="exportExcel">Descargar xls</button>
 
     <!-- Iterar sobre los datos agrupados por día -->
     <div v-for="(grupo, index) in productosPorDia" :key="index">
@@ -171,6 +172,7 @@
 import axios from "axios";
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import ExcelJS from 'exceljs'
 
 export default {
   data() {
@@ -250,7 +252,7 @@ export default {
         const url = "http://gasserver.dyndns.org:8081/admin/get.php/inventariodiario";
         const params = {
           fechaInicio: `${this.fechaInicio}T00:00:00`,
-          fechaFin: `${this.fechaFin}T23:59:00`,
+          fechaFin: `${this.fechaFin}T23:59:59`,
           dbm: parseInt(this.dbm)
         };
 
@@ -274,18 +276,36 @@ export default {
       }
     },
     calcularTotal(productos) {
-      const total = {};
+    const total = {};
+    
+    // Inicializar el total con 0 para todas las columnas excepto 'inicial'
+    for (const key in productos[0]) {
+      if (key !== 'inicial') {
+        total[key] = 0;
+      }
+    }
 
-      productos.forEach(producto => {
-        for (const key in producto) {
-          if (!isNaN(parseFloat(producto[key]))) {
-            total[key] = (total[key] || 0) + parseFloat(producto[key]);
-          }
+    // Encontrar la cantidad inicial de la primera transacción
+    for (let i = 0; i < productos.length; i++) {
+      if (productos[i].inicial) {
+        total.inicial = parseFloat(productos[i].inicial);
+        break;
+      }
+    }
+
+    // Sumar el resto de las transacciones
+    productos.forEach(producto => {
+      for (const key in producto) {
+        if (key !== 'inicial' && !isNaN(parseFloat(producto[key]))) {
+          total[key] += parseFloat(producto[key]);
         }
-      });
+      }
+    });
 
-      return total;
-    },
+    return total;
+  },
+
+
     calcularTotalGeneral() {
     let totalGeneral = {
       inicial: 0,
@@ -410,7 +430,104 @@ export default {
 
       // Guardar el PDF
       doc.save('Reporte_Operativo.pdf');
-  }
+  },
+  exportExcel() {
+  this.$nextTick(async () => {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Datos');
+
+    let rowIndex = 1;
+
+    // Agregar el título del reporte
+    const titulo = `Saldos Proveedores - Estación: ${this.estaciones[this.dbm]} (ID: ${this.dbm}) \n Del (${this.fechaInicio} al ${this.fechaFin})`;
+    const titleCell = worksheet.getCell(rowIndex, 1);
+    titleCell.value = titulo;
+    titleCell.font = { bold: true, size: 14 }; // Hacer el título negrita y un poco más grande
+    rowIndex += 2; // Dejar dos filas vacías entre el título y las tablas
+
+    // Exportar tablas agrupadas por día
+    this.productosPorDia.forEach(grupo => {
+      // Agregar la fecha como título
+      const fechaTitulo = `Fecha: ${grupo.fecha}`;
+      const fechaTitleCell = worksheet.getCell(rowIndex, 1);
+      fechaTitleCell.value = fechaTitulo;
+      fechaTitleCell.font = { bold: true }; // Hacer el título negrita
+      rowIndex++; // Saltar a la siguiente fila
+
+      // Convertir la tabla HTML de productos por día a un array de arrays
+      const dataDia = grupo.productos.map(adeudo =>
+        Object.values(adeudo).map(value => value.toString())
+      );
+
+      // Agregar los datos a la hoja de Excel
+      dataDia.forEach(row => {
+        row.forEach((value, colIndex) => {
+          const cell = worksheet.getCell(rowIndex, colIndex + 1);
+          cell.value = value;
+
+          // Aplicar negrita a los encabezados de cada columna
+          if (rowIndex === 1) {
+            cell.font = { bold: true };
+          }
+
+          // Ajustar el ancho de las columnas específicas
+          if (colIndex === 0) {
+            worksheet.getColumn(colIndex + 1).width = 20; // Columna de fecha
+          } else {
+            worksheet.getColumn(colIndex + 1).width = 15; // Todas las demás columnas
+          }
+        });
+        rowIndex++;
+      });
+
+      rowIndex++; // Dejar una fila vacía entre las tablas agrupadas por día
+    });
+
+    // Exportar tablas agrupadas por producto
+    this.totalPorProducto.forEach(grupo => {
+      // Agregar el nombre del producto como título
+      const productoTitulo = `Producto: ${grupo.nombre}`;
+      const productoTitleCell = worksheet.getCell(rowIndex, 1);
+      productoTitleCell.value = productoTitulo;
+      productoTitleCell.font = { bold: true }; // Hacer el título negrita
+      rowIndex++; // Saltar a la siguiente fila
+
+      // Convertir la tabla HTML de productos por producto a un array de arrays
+      const dataProducto = [[], Object.keys(grupo.total), Object.values(grupo.total).map(value => value.toString())];
+
+      // Agregar los datos a la hoja de Excel
+      dataProducto.forEach(row => {
+        row.forEach((value, colIndex) => {
+          const cell = worksheet.getCell(rowIndex, colIndex + 1);
+          cell.value = value;
+
+          // Aplicar negrita a los encabezados de cada columna
+          if (rowIndex === 1) {
+            cell.font = { bold: true };
+          }
+
+          // Ajustar el ancho de las columnas
+          worksheet.getColumn(colIndex + 1).width = 20;
+        });
+        rowIndex++;
+      });
+
+      rowIndex++; // Dejar una fila vacía entre las tablas agrupadas por producto
+    });
+
+    // Guardar el libro de trabajo como un archivo .xlsx
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'informe_proveedores.xlsx';
+    a.click();
+  });
+}
+
+
+
 
 
   },

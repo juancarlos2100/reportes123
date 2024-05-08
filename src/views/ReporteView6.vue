@@ -23,6 +23,7 @@
     <table :class="{ 'table': !isDarkMode, 'dark-mode-table': isDarkMode }">
       <thead>
         <tr>
+          <th>id</th>
           <th>Producto</th>
           <th>Inicio</th>
           <th>Compras</th>
@@ -38,6 +39,7 @@
       </thead>
       <tbody>
         <tr v-for="(adeudo, index) in productosIndividuales" :key="index">
+          <td>{{ adeudo['id'] }}</td>
           <td>{{ adeudo['producto'] }}</td>
           <td>{{ parseFloat(adeudo['inicio']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
           <td>{{ parseFloat(adeudo['compras']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
@@ -53,6 +55,7 @@
         <!-- Nueva fila para mostrar las sumas totales -->
         <tr>
           <td><strong>Total</strong></td>
+          <td>.</td>
           <td><strong>{{ sumarColumna('inicio').toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
           <td><strong>{{ sumarColumna('compras').toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
           <td><strong>{{ sumarColumna('jarras').toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>

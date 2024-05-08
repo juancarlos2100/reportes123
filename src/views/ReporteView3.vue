@@ -141,7 +141,7 @@ export default {
   },
   methods: {
     async cargarEstaciones() {
-      const url = 'http://192.168.1.68/admin/get.php/estaciones';
+      const url = 'http://gasserver.dyndns.org:8081/admin/get.php/estaciones';
       try {
         const response = await axios.get(url);
         this.estaciones = response.data.data.reduce((acc, item) => {
@@ -154,7 +154,7 @@ export default {
     },
     async filtrarDatos() {
       if (this.fechaInicio && this.fechaFin && this.dbm) {
-        const url = "http://192.168.1.68/admin/get.php/saldospipas";
+        const url = "http://gasserver.dyndns.org:8081/admin/get.php/saldospipas";
         const params = {
           fechaInicio: `${this.fechaInicio}T00:00:00`,
           fechaFin: `${this.fechaFin}T12:00:00`,
