@@ -35,6 +35,9 @@
                             <th>totalClientes</th>
                             <th>totalBombas</th>
                             <th>totalPerifericos</th>
+                            <th>Monto</th>
+                            <th> Monto Depositado</th>
+                            <th>Diferencia</th>
                         </tr>
                     </thead>
                     <tbody v-if="mostrarResultados">
@@ -47,6 +50,9 @@
                             <td>${{ parseFloat(adeudo['total_clientes']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
                             <td>${{ parseFloat(adeudo['total_bombas']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
                             <td>${{ parseFloat(adeudo['total_perifericos']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
+                            <td>${{ parseFloat(adeudo['monto']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
+                            <td>${{ parseFloat(adeudo['monto_depositado']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
+                            <td>${{ parseFloat(adeudo['diferencia']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
                         </tr>
                     </tbody>
                     <tbody v-else>
@@ -128,8 +134,8 @@ export default {
             if (this.dbm) {
                 const url = "http://gasserver.dyndns.org:8081/admin/get.php/saldosturnos";
                 const params = {
-                    fechaInicio: this.fechaInicio,
-                    fechaFin: this.fechaFin,
+                  fechaInicio: `${this.fechaInicio}T00:00:00`,
+                  fechaFin: `${this.fechaFin}T23:59:59`,
                     dbm: parseInt(this.dbm)
                 };
 

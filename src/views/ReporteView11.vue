@@ -133,7 +133,7 @@ export default {
  },
  methods: {
    async cargarEstaciones() {
-     const url = 'http://gasserver.dyndns.org:8081/admin/get.php/estaciones';
+     const url = 'http://192.168.1.235/admin2/get.php/estaciones';
      try {
        const response = await axios.get(url);
        this.estaciones = response.data.data.reduce((acc, item) => {
@@ -148,7 +148,7 @@ export default {
     if (this.turnoInicio && this.turnoFin && this.dbm) {
       const turnoInicioInt = parseInt(this.turnoInicio);
       const turnoFinInt = parseInt(this.turnoFin);
-      const url = `http://gasserver.dyndns.org:8081/admin/get.php/empresarembolso`;
+      const url = `http://192.168.1.235/admin2/get.php/empresarembolso`;
 
       const params = {
         turnoInicio: turnoInicioInt,

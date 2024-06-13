@@ -23,6 +23,7 @@
     "mysql": "^2.18.1",
     "mysql2": "^3.7.0",
     "vue": "^3.3.13",
+    "vue-multiselect": "^3.0.0",
     "vue-router": "^4.2.5",
     "vue-tables-2": "^2.3.5",
     "vue2-frappe": "^1.2.3",

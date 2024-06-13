@@ -14,6 +14,9 @@
     <router-link to="/reporte10">Reporte Gastos</router-link>|
     <router-link to="/reporte11">Reembolsos</router-link>|
     <router-link to="/reporte12">Reporte Turnos</router-link>|
+    <router-link to="/reporte13">Gastos2</router-link>|
+    <router-link to="/reporte14">COMPRAS</router-link>|
+    <router-link to="/reporte15">Reporte15</router-link>|
   </nav>
   <router-view/>
 </template>

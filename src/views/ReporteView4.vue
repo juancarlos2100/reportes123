@@ -52,6 +52,7 @@
                  <td>${{ parseFloat(adeudo['monto_depositado']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
                  <td>${{ parseFloat(adeudo['diferencia']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
               </tr>
+              
             </tbody>
           </table>
         </div>
@@ -115,7 +116,7 @@ export default {
   },
   methods: {
     async cargarEstaciones() {
-      const url = 'http://192.168.1.68/admin/get.php/estaciones';
+      const url = 'http://gasserver.dyndns.org:8081/admin/get.php/estaciones';
       try {
         const response = await axios.get(url);
         this.estaciones = response.data.data.reduce((acc, item) => {
@@ -128,7 +129,7 @@ export default {
     },
     async filtrarDatos() {
       if (this.fechaInicio && this.fechaFin && this.dbm) {
-        const url = "http://192.168.1.68/admin/get.php/depositoefectivo";
+        const url = "http://gasserver.dyndns.org:8081/admin/get.php/depositoefectivo";
         const params = {
           fechaInicio: this.fechaInicio,
           fechaFin: this.fechaFin,

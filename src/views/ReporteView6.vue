@@ -112,7 +112,7 @@ export default {
 
   methods: {
     async cargarEstaciones() {
-      const url = 'http://gasserver.dyndns.org:8081/admin/get.php/estaciones';
+      const url = 'http://192.168.1.235/admin2/get.php/estaciones';
       try {
         const response = await axios.get(url);
         this.estaciones = response.data.data.reduce((acc, item) => {
@@ -127,7 +127,7 @@ export default {
       if (this.turnoInicio && this.turnoFin && this.dbm) {
         const turnoInicioInt = parseInt(this.turnoInicio);
         const turnoFinInt = parseInt(this.turnoFin);
-        const url = `http://gasserver.dyndns.org:8081/admin/get.php/periodoturno`;
+        const url = `http://192.168.1.235/admin2/get.php/periodoturno2`;
 
         const params = {
           turnoInicio: turnoInicioInt,
@@ -175,16 +175,16 @@ export default {
 
   // Colores base y resaltados para los gráficos
   const baseColors = [
-    'rgba(255, 51, 102, 0.4)', // Rosa neón
     'rgba(102, 255, 51, 0.4)', // Verde neón
+    'rgba(255, 51, 102, 0.4)', // Rosa neón
     'rgba(255, 255, 51, 0.4)', // Amarillo neón
     'rgba(51, 204, 255, 0.4)', // Azul neón
     'rgba(204, 102, 255, 0.4)', // Morado neón
     'rgba(255, 153, 51, 0.4)' // Naranja neón
   ];
   const neonHoverColors = [
-    'rgba(255, 51, 102, 8)', // Rosa neón
     'rgba(102, 255, 51, 8)', // Verde neón
+    'rgba(255, 51, 102, 8)', // Rosa neón
     'rgba(255, 255, 51, 8)', // Amarillo neón
     'rgba(51, 204, 255, 8)', // Azul neón
     'rgba(204, 102, 255, 8)', // Morado neón
