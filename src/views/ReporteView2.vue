@@ -61,7 +61,7 @@
         <table :class="{ 'table': !isDarkMode, 'dark-mode-table': isDarkMode }">
           <thead>
             <tr>
-              <th>Banco</th>
+     
               <!--<th>id</th>-->
               <th>Descripcion</th>
               <th>Movimiento</th>
@@ -73,7 +73,7 @@
           </thead>
           <tbody v-if="mostrarResultados">
             <tr v-for="(adeudo, index) in resultados" :key="index">
-              <td>{{ adeudo['banco'] }}</td>
+           
               <!-- <td>{{ adeudo['id_transaccion'] }}</td>-->
               <td>{{ adeudo['descripcion'].length > 45 ? adeudo['descripcion'].slice(0, 45) + '...' : adeudo['descripcion'] }}</td>
               <td><strong>{{ adeudo['id_tipo'] === '1' ? 'Abonos' : (adeudo['id_tipo'] === '2' ? 'Cargos' : 'otro') }}</strong></td>
@@ -182,7 +182,7 @@ export default {
   methods: {
 
     async cargarEstaciones() {
-      const url = 'http://gasserver.dyndns.org:8081/admin/get.php/estaciones';
+      const url = 'http://192.168.1.235/admin/get.php/estaciones';
       try {
         const response = await axios.get(url);
         this.estaciones = response.data.data.reduce((acc, item) => {
@@ -195,7 +195,7 @@ export default {
     },
     async cargarBancos() {
       if (this.dbm) {
-        const url = `http://gasserver.dyndns.org:8081/admin/get.php/listabanco?dbm=${this.dbm}`;
+        const url = `http://192.168.1.235/admin/get.php/listabanco?dbm=${this.dbm}`;
         try {
           const response = await axios.get(url);
           this.bancos = response.data.data.reduce((acc, item) => {
@@ -212,18 +212,16 @@ export default {
     async filtrarDatos() {
   if (this.fechaInicio && this.fechaFin && this.dbm) {
     // Asegúrate de usar solo una URL para la solicitud
-    const url = `http://gasserver.dyndns.org:8081/admin/get.php/transaccionesbanco`;
+    const url = `http://192.168.1.235/admin/get.php/transaccionesbanco`;
 
     // Concatenar la fecha de inicio y la hora de inicio
-    const fechaInicioConHora = `${this.fechaInicio}T${this.horaInicio}:00`;
 
-    const fechaFinConHora = `${this.fechaFin}T12:00:00`;
 
     const params = {
-      fechaInicio: fechaInicioConHora,
-      fechaFin: fechaFinConHora,
-      dbm: parseInt(this.dbm)
-    };
+          fechaInicio: `${this.fechaInicio}T00:00:00`,
+          fechaFin: `${this.fechaFin}T23:59:59`,
+          dbm: parseInt(this.dbm)
+        };
 
     try {
       const response = await axios.get(url, { params });

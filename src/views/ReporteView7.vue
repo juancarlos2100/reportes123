@@ -44,7 +44,7 @@
             <th>final</th>
             <th>fincalculado</th>
             <th>diferencia</th>
-            <th>merma</th>
+            <!--<th>merma</th>-->
           </tr>
         </thead>
         <tbody>
@@ -61,7 +61,7 @@
             <td>{{ parseFloat(adeudo['final']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
             <td>{{ parseFloat(adeudo['fincalculado']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
             <td>{{ parseFloat(adeudo['diferencia']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</td>
-            <td>{{ parseFloat(adeudo['merma']).toFixed(2) }}</td>
+            <!-- <td>{{ parseFloat(adeudo['merma']).toFixed(2) }}</td> -->
           </tr>
           <!-- Calcular y mostrar fila extra para total -->
           <tr>
@@ -76,7 +76,7 @@
             <td><strong>{{ parseFloat(grupo.total.final).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
             <td><strong>{{ parseFloat(grupo.total.fincalculado).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
             <td><strong>{{ parseFloat(grupo.total.diferencia).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
-            <td><strong>{{ parseFloat(grupo.total.merma).toFixed(2) }}</strong></td>
+            <!-- <td><strong>{{ parseFloat(grupo.total.merma).toFixed(2) }}</strong></td> -->
           </tr>
         </tbody>
       </table>
@@ -103,7 +103,7 @@
         <th>Final</th>
         <th>Fin Calculado</th>
         <th>Diferencia</th>
-        <th>Merma</th>
+        <!-- <th>Merma</th>-->
       </tr>
     </thead>
     <tbody>
@@ -117,9 +117,9 @@
         <td><strong>{{ parseFloat(grupo.total['venta']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
         <td><strong>{{ parseFloat(grupo.total['ventastanque']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
         <td><strong>{{ parseFloat(grupo.total['final']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
-        <td><strong>{{ parseFloat(grupo.total['fincalculado']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
+        <td><strong>{{ parseFloat(grupo.total['inicial'] + grupo.total['jarras'] + grupo.total['compra'] - grupo.total['venta']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
         <td><strong>{{ parseFloat(grupo.total['diferencia']).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
-        <td><strong>{{ parseFloat(grupo.total['merma']).toFixed(2) }}</strong></td>
+         <!--<td><strong>{{ parseFloat(grupo.total['merma']).toFixed(2) }}</strong></td>-->
       </tr>
     </tbody>
   </table>
@@ -129,11 +129,9 @@
     <div>
     <!-- Tabla para el total general -->
     <h1 style="text-align: right; margin-right: 100px;">Total General</h1>
-    <table :class="{ 'table': !isDarkMode, 'dark-mode-table': isDarkMode } " style="margin-left: 500px; width: 71%">
+    <table :class="{ 'table': !isDarkMode, 'dark-mode-table': isDarkMode } " style="margin-left: 650px; width: 62%">
       <thead>
         <tr>
-
-          <th>Inicial</th>
           <th>Compra</th>
           <th>Jarras</th>
           <th>Venta</th>
@@ -141,13 +139,11 @@
           <th>Final</th>
           <th>Fin Calculado</th>
           <th>Diferencia</th>
-          <th>Merma</th>
+          <!--<th>Merma</th> -->
         </tr>
       </thead>
       <tbody>
         <tr>
-
-          <td><strong>{{ parseFloat(totalGeneral.inicial).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
           <td><strong>{{ parseFloat(totalGeneral.compra).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
           <td><strong>{{ parseFloat(totalGeneral.jarras).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
           <td><strong>{{ parseFloat(totalGeneral.venta).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
@@ -155,7 +151,7 @@
           <td><strong>{{ parseFloat(totalGeneral.final).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
           <td><strong>{{ parseFloat(totalGeneral.fincalculado).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
           <td><strong>{{ parseFloat(totalGeneral.diferencia).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</strong></td>
-          <td><strong>{{ parseFloat(totalGeneral.merma).toFixed(2) }}</strong></td>
+          <!--<td><strong>{{ parseFloat(totalGeneral.merma).toFixed(2) }}</strong></td> -->
         </tr>
       </tbody>
     </table>
@@ -236,7 +232,7 @@ export default {
   },
   methods: {
     async cargarEstaciones() {
-      const url = 'http://gasserver.dyndns.org:8081/admin/get.php/estaciones';
+      const url = 'http://192.168.1.235/admin/get.php/estaciones';
       try {
         const response = await axios.get(url);
         this.estaciones = response.data.data.reduce((acc, item) => {
@@ -249,7 +245,7 @@ export default {
     },
     async filtrarDatos() {
       if (this.fechaInicio && this.fechaFin && this.dbm) {
-        const url = "http://gasserver.dyndns.org:8081/admin/get.php/inventariodiario";
+        const url = "http://192.168.1.235/admin/get.php/inventariodiario";
         const params = {
           fechaInicio: `${this.fechaInicio}T00:00:00`,
           fechaFin: `${this.fechaFin}T23:59:59`,
@@ -276,34 +272,46 @@ export default {
       }
     },
     calcularTotal(productos) {
-    const total = {};
-    
-    // Inicializar el total con 0 para todas las columnas excepto 'inicial'
-    for (const key in productos[0]) {
-      if (key !== 'inicial') {
-        total[key] = 0;
-      }
-    }
+      const total = {};
 
-    // Encontrar la cantidad inicial de la primera transacción
-    for (let i = 0; i < productos.length; i++) {
-      if (productos[i].inicial) {
-        total.inicial = parseFloat(productos[i].inicial);
-        break;
+      // Inicializar el total con 0 para todas las columnas excepto 'inicial' y 'final'
+      for (const key in productos[0]) {
+          if (key !== 'inicial' && key !== 'final') {
+              total[key] = 0;
+          }
       }
-    }
 
-    // Sumar el resto de las transacciones
-    productos.forEach(producto => {
-      for (const key in producto) {
-        if (key !== 'inicial' && !isNaN(parseFloat(producto[key]))) {
-          total[key] += parseFloat(producto[key]);
-        }
+      // Encontrar la cantidad inicial de la primera transacción
+      for (let i = 0; i < productos.length; i++) {
+          if (productos[i].inicial) {
+              total.inicial = parseFloat(productos[i].inicial);
+              break;
+          }
       }
-    });
 
-    return total;
+      // Encontrar la cantidad final de la última transacción
+      for (let i = productos.length - 1; i >= 0; i--) {
+          if (productos[i].final) {
+              total.final = parseFloat(productos[i].final);
+              break;
+          }
+      }
+
+      // Calcular fincalculado correctamente
+      total.fincalculado = (total.inicial + total.jarras + total.compra) - total.venta;
+
+      // Sumar el resto de las transacciones
+      productos.forEach(producto => {
+          for (const key in producto) {
+              if (key !== 'inicial' && key !== 'final' && !isNaN(parseFloat(producto[key]))) {
+                  total[key] += parseFloat(producto[key]);
+              }
+          }
+      });
+
+      return total;
   },
+
 
 
     calcularTotalGeneral() {
