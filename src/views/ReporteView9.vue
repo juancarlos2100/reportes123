@@ -236,8 +236,8 @@ export default {
     return {
       fechaInicio: '', // Variable para almacenar la fecha de inicio del formulario
       fechaFin: '', // Variable para almacenar la fecha de fin del formulario
-      idTurno: null, // Variable para almacenar el idTurno del formulario
-
+      turnoInicio0: null, // Variable para almacenar el idTurno inicial del formulario
+      turnoFin0: null, // Variable para almacenar el idTurno final del formulario
       resultadosBancos: [],
       resultadosProveedores: [],
       resultadosEfectivo: [],
@@ -245,7 +245,6 @@ export default {
       resultadosReembolso: [],
       resultadosGasolina: [],
       resultadosAceites: [],
-
       resultadosFiltradosBancos: [],
       resultadosFiltradosProveedores: [],
       resultadosFiltradosEfectivo: [],
@@ -269,7 +268,7 @@ export default {
       });
 
     // Obtener datos de proveedores
-    axios.get("https://sistemas-oktan.com/admin/get.php/saldospipas")
+    axios.get("http://gasserver.dyndns.org:8081/admin/get.php/saldospipas")
       .then((response) => {
         this.resultadosProveedores = response.data.data;
       })
@@ -278,7 +277,7 @@ export default {
       });
 
     // Obtener datos de efectivo
-    axios.get("https://sistemas-oktan.com/admin/get.php/depositoefectivo")
+    axios.get("http://gasserver.dyndns.org:8081/admin/get.php/depositoefectivo")
       .then((response) => {
         this.resultadosEfectivo = response.data.data.map(item => {
           if (item.id_turno === '') {
@@ -292,7 +291,7 @@ export default {
       });
 
     // Obtener datos de clientes
-    axios.get("https://sistemas-oktan.com/admin/get.php/clientesxcobrar")
+    axios.get("http://gasserver.dyndns.org:8081/admin/get.php/clientesxcobrar")
       .then((response) => {
         this.resultadosClientes = response.data.data.map(resu => {
           return {
@@ -305,7 +304,7 @@ export default {
         console.error("Error al obtener datos de clientes:", error);
       });
       axios
-          .get("https://sistemas-oktan.com/admin/get.php/empreembolso")
+          .get("http://gasserver.dyndns.org:8081/admin/get.php/empreembolso")
           .then((response) => {
             this.resultadosReembolso = response.data.data; // Asegúrate de tener 'resultadosSegundaTabla' en tu data()
           })
@@ -314,7 +313,7 @@ export default {
           });
           // Obtener datos de inventario gasolina
       axios
-        .get("https://sistemas-oktan.com/admin/get.php/invgasolina")
+        .get("http://gasserver.dyndns.org:8081/admin/get.php/invgasolina")
         .then((response) => {
           this.resultadosGasolina = response.data.data;
         })
@@ -322,7 +321,7 @@ export default {
           console.error("Error al obtener datos de bancos:", error);
         });
         axios
-          .get("https://sistemas-oktan.com/admin/get.php/invaceites")
+          .get("http://gasserver.dyndns.org:8081/admin/get.php/invaceites")
           .then((response) => {
             this.resultadosAceites = response.data.data;
             console.log(this.resultados);

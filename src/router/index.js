@@ -12,6 +12,7 @@ import ReporteView9 from '../views/ReporteView9.vue'
 import ReporteView10 from '../views/ReporteView10.vue'
 import ReporteView11 from '../views/ReporteView11.vue'
 import ReporteView12 from '../views/ReporteView12.vue'
+import Desglose from '../views/ReporteDesglose.vue'
 
 const routes = [
   {
@@ -79,7 +80,11 @@ const routes = [
     name: 'reporte12',
     component: ReporteView12
   },
-
+  {
+    path: '/desglose',
+    name: 'desglose',
+    component: Desglose
+  },
   {
     path: '/about',
     name: 'about',
