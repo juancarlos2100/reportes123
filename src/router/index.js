@@ -16,6 +16,8 @@ import Desglose from '../views/ReporteDesglose.vue'
 import ReporteView13 from '../views/ReporteView13.vue'
 import ReporteView14 from '../views/ReporteView14.vue'
 import ReporteView15 from '../views/ReporteView15.vue'
+import ReporteProveedores from '../views/ReporteSaldosProveedores.vue'
+import ReporteComprobacion from '../views/ReporteComprobacion.vue';
 
 const routes = [
   {
@@ -89,6 +91,12 @@ const routes = [
     component: Desglose
   },
   {
+    path: '/comprobacion',
+    name: 'comprobacion',
+    component: ReporteComprobacion
+  }
+  ,
+  {
     path: '/reporte13',
     name: 'reporte13',
     component: ReporteView13
@@ -102,6 +110,11 @@ const routes = [
     path: '/reporte15',
     name: 'reporte15',
     component: ReporteView15
+  },
+  {
+    path: '/proveedores',
+    name: 'proveedores',
+    component: ReporteProveedores
   },
   {
     path: '/about',

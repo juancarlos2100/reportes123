@@ -71,7 +71,7 @@
 
       <div>
         <!-- Tabla Totales Bancos -->
-        <h3>Bancos</h3>
+        <h3 class="titulo-tabla">Bancos</h3>
         <table :class="{ 'table': !isDarkMode, 'dark-mode-table': isDarkMode }" class="tabla-totales">
           <thead>
             <tr>
@@ -102,26 +102,45 @@
               <tr>
                 <th>Pipas por pagar (PROVEEDOR)</th>
                 <th>Folio-Factura</th>
+                <th>Fecha Creación</th>
                 <th>Importe</th>
+                <th>Fecha Último Pago</th>
+                <th>Estatus</th>
               </tr>
             </thead>
             <tbody>
               <!-- <tr v-for="(saldo, proveedor) in calcularTotalesPorNombreProveedores()" :key="proveedor"> -->
               <tr v-for="(proveedor) in this.resultadosFiltradosProveedores" :key="proveedor">
                 <td>{{ proveedor.proveedor }}</td>
-                <td>{{ proveedor.factura }}</td>
-                <td>{{ parseFloat(proveedor.importe).toLocaleString('en-US', {
+                <td>{{ proveedor.folio }}</td>
+                <td>{{ proveedor.fecha_creacion }}</td>
+                <td>${{ parseFloat(proveedor.cargo).toLocaleString('en-US', {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2
                 }) }}</td>
+                <td>{{ proveedor.fecha_pago }}</td>
+                <td v-if="proveedor.deuda > -30 && proveedor.deuda < 30 " ><strong>PAGADO</strong></td>
+                <td v-else-if="proveedor.deuda > 1 || proveedor.deuda <= -1" >
+                 <strong>DEUDA: {{ parseFloat(proveedor.deuda).toLocaleString('en-US', {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2
+                  }) }}</strong>
+                </td>
+                <td v-else-if="proveedor.deuda == null" ><strong></strong></td>
               </tr>
               <tr>
                 <td><strong>Total</strong></td>
                 <td></td>
-                <td><strong>${{ calcularTotalGeneralSaldosProveedores().toLocaleString('en-US', {
+                <td></td>
+                <td><strong>${{ calcularTotalGeneralSaldosProveedores('cargo').toLocaleString('en-US', {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2
                 }) }}</strong></td>
+                <td></td>
+                <td><strong>${{ calcularTotalGeneralSaldosProveedores('deuda').toLocaleString('en-US', {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2
+                })}}</strong></td>
               </tr>
             </tbody>
           </table>
@@ -461,7 +480,7 @@ export default {
   methods: {
     // Cargar los nombres de las estaciones  
     async cargarEstaciones() {
-      const url = 'http://gasserver.dyndns.org:8081/admin/get.php/estaciones';
+      const url = 'http://192.168.1.235/admin/get.php/estaciones';
       try {
         const response = await axios.get(url);
         this.estaciones = response.data.data.reduce((acc, item) => {
@@ -473,7 +492,7 @@ export default {
       }
     },
     async filtrarDatos() {
-      const url = `http://gasserver.dyndns.org:8081/admin/get.php/desglose?fechaInicio=${this.fechaInicio}&fechaFin=${this.fechaFin}&turnoInicio=${this.turnoInicio}&turnoFin=${this.turnoFin}&dbm=${this.dbm}`;
+      const url = `http://192.168.1.235/admin/get.php/desglose2?fechaInicio=${this.fechaInicio}&fechaFin=${this.fechaFin}&turnoInicio=${this.turnoInicio}&turnoFin=${this.turnoFin}&dbm=${this.dbm}`;
       try {
         const response = await axios.get(url);
         // RESULTADOS
@@ -495,25 +514,29 @@ export default {
         this.resultadosFiltradosAceites = this.resultadosAceites[3];
 
         // EMPRESAS DE REEMBOLSO
-        const urlEmpresasRembolso = `http://gasserver.dyndns.org:8081/admin/get.php/empresarembolso?turnoInicio=${this.turnoInicio}&turnoFin=${this.turnoFin}&dbm=${this.dbm}`;
+        // const urlEmpresasRembolso = `http://gasserver.dyndns.org:8081/admin/get.php/empresarembolso?turnoInicio=${this.turnoInicio}&turnoFin=${this.turnoFin}&dbm=${this.dbm}`;
+        const urlEmpresasRembolso = `http://192.168.1.235/admin/get.php/empresarembolso?turnoInicio=${this.turnoInicio}&turnoFin=${this.turnoFin}&dbm=${this.dbm}`;
         const response2 = await axios.get(urlEmpresasRembolso);
         this.resultadosReembolso = response2.data.data;
         this.resultadosFiltradosReembolso = this.resultadosReembolso;
 
         //CLIENTES POR COBRAR (CREDITO) 
-        const urlClientesCredito = `http://gasserver.dyndns.org:8081/admin/get.php/saldosclientesturno?turnoInicio=${this.turnoInicio}&turnoFin=${this.turnoFin}&dbm=${this.dbm}`;
+        // const urlClientesCredito = `http://gasserver.dyndns.org:8081/admin/get.php/saldosclientesturno?turnoInicio=${this.turnoInicio}&turnoFin=${this.turnoFin}&dbm=${this.dbm}`;
+        const urlClientesCredito = `http://192.168.1.235/admin/get.php/saldosclientesturno?turnoInicio=${this.turnoInicio}&turnoFin=${this.turnoFin}&dbm=${this.dbm}`;
         const response3 = await axios.get(urlClientesCredito);
         this.resultadosClientes = response3.data.data;
         this.resultadosFiltradosClientes = this.resultadosClientes;
 
         // CLIENTES DEBITO
-        const urlClientesDebito = `http://gasserver.dyndns.org:8081/admin/get.php/saldosclientesdebito?turnoInicio=${this.turnoInicio}&turnoFin=${this.turnoFin}&dbm=${this.dbm}`;
+        // const urlClientesDebito = `http://gasserver.dyndns.org:8081/admin/get.php/saldosclientesdebito?turnoInicio=${this.turnoInicio}&turnoFin=${this.turnoFin}&dbm=${this.dbm}`;
+        const urlClientesDebito = `http://192.168.1.235/admin/get.php/saldosclientesdebito?turnoInicio=${this.turnoInicio}&turnoFin=${this.turnoFin}&dbm=${this.dbm}`;
         const response4 = await axios.get(urlClientesDebito);
         this.resultadosClientesDebito = response4.data.data;
         this.resultadosFiltradosClientesDebito = this.resultadosClientesDebito;
 
         // INVENTARIO DE GASOLINA
-        const urlGasolina = `http://gasserver.dyndns.org:8081/admin/get.php/utilidadventas?fechaInicio=${this.fechaInicio2}&fechaFin=${this.fechaFin2}&dbm=${this.dbm}`;
+        //const urlGasolina = `http://gasserver.dyndns.org:8081/admin/get.php/utilidadventas?fechaInicio=${this.fechaInicio2}&fechaFin=${this.fechaFin2}&dbm=${this.dbm}`;
+        const urlGasolina = `http://192.168.1.235/admin/get.php/utilidadventas?fechaInicio=${this.fechaInicio2}&fechaFin=${this.fechaFin2}&dbm=${this.dbm}`;
         const response5 = await axios.get(urlGasolina);
         this.resultadosGasolina = response5.data.data;
         this.resultadosFiltradosGasolina = this.resultadosGasolina;
@@ -544,10 +567,10 @@ export default {
       return totalesPorNombre;
     },
 
-    calcularTotalGeneralSaldosProveedores() {
+    calcularTotalGeneralSaldosProveedores(parametro) {
       let totalGeneral = 0;
       this.resultadosFiltradosProveedores.forEach((adeudo) => {
-        totalGeneral += parseFloat(adeudo['importe']);
+        totalGeneral += parseFloat(adeudo[parametro]);
       });
       return totalGeneral;
     },
