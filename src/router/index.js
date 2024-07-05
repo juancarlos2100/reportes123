@@ -18,6 +18,7 @@ import ReporteView14 from '../views/ReporteView14.vue'
 import ReporteView15 from '../views/ReporteView15.vue'
 import ReporteProveedores from '../views/ReporteSaldosProveedores.vue'
 import ReporteComprobacion from '../views/ReporteComprobacion.vue';
+import ReporteView17 from '../views/ReporteView17.vue'
 
 const routes = [
   {
@@ -115,6 +116,11 @@ const routes = [
     path: '/proveedores',
     name: 'proveedores',
     component: ReporteProveedores
+  },
+  {
+    path: '/reporte17',
+    name: 'reporte17',
+    component: ReporteView17
   },
   {
     path: '/about',

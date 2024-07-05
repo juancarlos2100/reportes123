@@ -20,6 +20,7 @@
     <router-link to="/reporte13">Gastos2</router-link>|
     <router-link to="/reporte14">COMPRAS</router-link>|
     <router-link to="/reporte15">Reporte15</router-link>|
+    <router-link to="/reporte17">reporte17</router-link>|
   </nav>
   <router-view/>
 </template>

@@ -1,0 +1,1 @@
+export const API_BASE_URL = 'http://gasserver.dyndns.org:8081/';
