@@ -144,74 +144,75 @@
       </div>
       <br>
     </div>
+
+
+    <!-- Seccion de Detalle de Gastos-->
+    <h2 v-if="mostrarResultados" style="text-align: center; margin-top: 20px">Detalle de Gastos</h2>
+<table :class="['responsive-table2', { 'table': !isDarkMode, 'dark-mode-table': isDarkMode }]" v-if="mostrarResultados || detalleGasto.length > 0">
+  <thead>
+    <tr>
+      <th style="text-align: center;">Categoria</th>
+      <th style="text-align: center;">Nombre</th>
+      <th style="text-align: center;">Importe</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr v-for="(gasto, index) in detalleGasto" :key="index">
+      <td>
+        <select style="font-size: large;" v-model="gasto.id_categoria" class="form-select" :class="{ 'dark-mode-select': isDarkMode }" @change="moverAGrupado(gasto, gasto.id_categoria)">
+          <option v-for="(categoria, id) in catalogo" :key="id" :value="id">{{ categoria }}</option>
+        </select>
+      </td>
+      <td>{{ gasto.descripcion }}</td>
+      <td style="text-align: right;">${{ parseFloat(gasto.monto).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</td>
+    </tr>
+    <tr v-if="detalleGasto.length === 0"> <!-- Mostrar solo si detalleGasto está vacío -->
+      <td colspan="5" style="text-align: center;">No hay detalles de gastos</td>
+    </tr>
+  </tbody>
+</table>
+<br>
+<br>
   
-    <div>
-        <h2 v-if="mostrarResultados" style="text-align: center; margin-top: 20px">Detalles de Gastos</h2>
-        <table :class="['responsive-table2', { 'table': !isDarkMode, 'dark-mode-table': isDarkMode }]" v-if="mostrarResultados">
-          <thead>
-            <tr>
-              <th style="text-align: center;">Categoria</th>
-                <th style="text-align: center;">categoria</th>
-                <th style="text-align: center;">id_detalle_gasto</th>
-              <th style="text-align: center;">Nombre</th>
-              <th style="text-align: center;">Importe</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(gasto, index) in resultados2" :key="index">
-              <td>
-                <select style="font-size: large;" v-model="gasto.categoria" class="form-select" :class="{ 'dark-mode-select': isDarkMode }">
-                  <option v-for="(categoria, id) in catalogo" :key="id" :value="id">{{ categoria }}</option>
-                </select>
-              </td>
-                <td>{{ gasto.id_categoria }}</td>
+      <!-- Tablas agrupadas por categoría -->
+        <div v-for="(gastos, categoria) in agruparPorCategoria" :key="categoria">
+          <h2 style="margin-left: 100px; margin-top: 20px;">{{ catalogo[categoria].split(' - ')[1] }}</h2>
+          <table :class="['responsive-table2', { 'table': !isDarkMode, 'dark-mode-table': isDarkMode }]">
+            <thead>
+              <tr>
+                <th>.</th>
+                <th style="text-align: center;">Nombre</th>
+                <th style="text-align: center;">Importe</th>
+        
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(gasto, index) in gastos" :key="index">
+                <td>
+                  <button class="boton-descargar1" @click="devolverACategorias(gasto)">Devolver</button>
+                </td>
+                <td>{{ gasto.descripcion }}</td>
+                <td style="text-align: right;">${{ parseFloat(gasto.monto).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</td>
+          
               
-                <td>{{ gasto.id_detalle_gasto }}</td>
-              <td>{{ gasto.descripcion }}</td>
-              <td style="text-align: right;">${{ parseFloat(gasto.monto).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</td>
-            </tr>
-          </tbody>
-        </table>
+              </tr>
+              <tr>
+                <td colspan="2" style="text-align: right;"><strong>Total</strong></td>
+                <td style="text-align: right;"><strong>${{ calcularTotalMonto2(gastos) }}</strong></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
 
-      </div>
 
-   
-  
-      <div v-for="(gastos, categoria) in categorias" :key="categoria">
-        <h2 style="margin-left: 100px; margin-top: 20px;">{{ catalogo[categoria].split(' - ')[1] }}</h2>
-        <table :class="['responsive-table2', { 'table': !isDarkMode, 'dark-mode-table': isDarkMode }]">
-          <thead>
-            <tr>
-              <th>.</th>
-              <th style="text-align: center;">Nombre</th>
-              <th style="text-align: center;">Importe</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(gasto, index) in gastos" :key="index">
-              <td>
-                <button class="boton-descargar1" @click="devolverACategorias(gasto)">Devolver</button>
-              </td>
-              <td>{{ gasto.descripcion }}</td>
-              <td style="text-align: right;">${{ parseFloat(gasto.monto).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</td>
-            </tr>
-            <tr>
-              <td colspan="2" style="text-align: right;"><strong>Total</strong></td>
-              <td style="text-align: right;"><strong>${{ calcularTotalMonto2(gastos) }}</strong></td>
-            </tr>
-          </tbody>
-        </table>
+            <div class="responsive-buttons">
+          <button class="boton-descargar" @click="guardarDetalleGastos2" v-if="mostrarResultados">Guardar Gastos</button>
+
+          <br>
+          <br>
+
+        </div>
         <br>
-      </div>
-        <div>
-          <div class="responsive-buttons">
-        <button class="boton-descargar" @click="guardarDetalleGastos2" v-if="mostrarResultados">Guardar Gastos</button>
-
-        <br>
-        <br>
-
-      </div>
-      <br>
           <h4 style="text-align: center" v-if="guardadoExitosoDetalleGastos">
                El reporte guardó con éxito la configuración de sus Gastos!
             </h4>
@@ -219,26 +220,27 @@
       <br>
 
           
-              <h2 v-if="mostrarResultados" style="text-align: center">Resumen de Relación de Gastos de {{ this.meses[mesSeleccionado]}} {{ anioSeleccionado }} </h2>
-  
-              <table :class="['responsive-table2', { 'table': !isDarkMode, 'dark-mode-table': isDarkMode }]" v-if="mostrarResultados">
-              <thead>
-                <tr>
-                  <th style="text-align: center">Categoría</th>
-                  <th style="text-align: center;">Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="(total, categoria) in calcularTotalesPorCategoria().totalesPorCategoria" :key="categoria">
-                  <td>{{ catalogo[categoria].split(' - ')[1] }}</td>
-                  <td style="text-align: right;">${{ total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</td>
-                </tr>
-                <tr>
-                  <td style="font-size: larger; text-align: right;"><strong>Total Global</strong></td>
-                  <td style="font-size: larger; text-align: right"><strong>${{ calcularTotalesPorCategoria().sumaTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</strong></td>
-                </tr>
-              </tbody>
-            </table>
+      <h2 v-if="mostrarResultados" style="text-align: center">Resumen de Relación de Gastos de {{ this.meses[mesSeleccionado-1] }} {{ anioSeleccionado }}</h2>
+        <table :class="['responsive-table2', { 'table': !isDarkMode, 'dark-mode-table': isDarkMode }]" v-if="mostrarResultados">
+          <thead>
+            <tr>
+              <th style="text-align: center">Categoría</th>
+             
+              <th style="text-align: center;">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(total, categoria) in calcularTotalesPorCategoria().totalesPorCategoria" :key="categoria">
+              <td>{{ catalogo[categoria]}}</td>
+              <td style="text-align: right;">${{ total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</td>
+            </tr>
+            <tr>
+              <td style="font-size: larger; text-align: right;"><strong>Total Global</strong></td>
+              <td style="font-size: larger; text-align: right"><strong>${{ calcularTotalesPorCategoria().sumaTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</strong></td>
+            </tr>
+          </tbody>
+        </table>
+
           </div>
   
           <div>
@@ -296,7 +298,7 @@
           </div>
         </div>
       </div>
-    </div>
+  
   </template>
   
   <script>
@@ -335,6 +337,9 @@
         idReporteActualizar: null,
         guardadoExitosoBancos: false, 
         guardadoExitosoDetalleGastos: false,
+        detalleGasto: [], 
+        gastosAgrupadosPorCategoria: {},
+     
         
       };
     },
@@ -351,7 +356,21 @@
           return acc;
         }, {});
       },
-    },
+
+      ...mapState(['user']),
+      agruparPorCategoria() {
+        return this.resultados2.reduce((acc, gasto) => {
+          const categoriaId = gasto.id_categoria;
+          if (!acc[categoriaId]) {
+            acc[categoriaId] = [];
+          }
+          acc[categoriaId].push(gasto);
+          return acc;
+        }, {});
+       },
+      },
+
+      
     methods: {
       async cargarEstaciones() {
         const url = `${API_BASE_URL}admin/get.php/estaciones`;
@@ -471,12 +490,12 @@
         }, 0);
     },
   
-      calcularTotalMonto2(transacciones) {
-        return transacciones.reduce((total, transaccion) => {
-          const monto = parseFloat(transaccion.monto);
-          return total + (isNaN(monto) ? 0 : monto);
-        }, 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-      },
+    calcularTotalMonto2(gastos) {
+      return gastos.reduce((total, gasto) => total + parseFloat(gasto.monto), 0).toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+    },
   
       calcularTotalSaldo(transacciones) {
         return transacciones.reduce((total, transaccion) => {
@@ -513,21 +532,24 @@
         return total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       },
   
-      moverACategoria(gasto) {
-        if (gasto.categoria) {
-          if (!this.categorias[gasto.categoria]) {
-            this.categorias[gasto.categoria] = [];
-          }
-          this.categorias[gasto.categoria].push({
-            descripcion: gasto.descripcion,
-            monto: gasto.monto
-          });
-          const index = this.resultados2.indexOf(gasto);
-          if (index !== -1) {
-            this.resultados2.splice(index, 1);
-          }
-        }
+      moverADetalle(gasto) {
+        this.gastosAgrupadosPorCategoria[gasto.id_categoria] = this.gastosAgrupadosPorCategoria[gasto.id_categoria].filter(g => g.id_detalle_gasto !== gasto.id_detalle_gasto);
+        this.detalleGasto.push(gasto);
       },
+      moverAGrupado(gasto, nuevaCategoria) {
+        this.detalleGasto = this.detalleGasto.filter(g => g.id_detalle_gasto !== gasto.id_detalle_gasto);
+        gasto.id_categoria = nuevaCategoria;
+        if (!this.gastosAgrupadosPorCategoria[nuevaCategoria]) {
+          this.gastosAgrupadosPorCategoria[nuevaCategoria] = [];
+        }
+        this.gastosAgrupadosPorCategoria[nuevaCategoria].push(gasto);
+      },
+    actualizarCategoria(gasto, nuevaCategoria) {
+      // Mover a la nueva categoría si es necesario
+      if (gasto.id_categoria !== nuevaCategoria) {
+        this.moverADetalleDeGastos(gasto, nuevaCategoria);
+      }
+    },
 
   
       agregarNuevaTransaccion() {
@@ -539,19 +561,33 @@
         },
   
   
-      calcularTotalesPorCategoria() {
-        const totalesPorCategoria = {};
-        for (const categoria in this.categorias) {
-          const gastos = this.categorias[categoria];
-          const totalCategoria = gastos.reduce((total, gasto) => total + parseFloat(gasto.importe), 0);
-          totalesPorCategoria[categoria] = totalCategoria;
-        }
-        const sumaTotal = Object.values(totalesPorCategoria).reduce((total, cantidad) => total + cantidad, 0);
-        return {
-          totalesPorCategoria,
-          sumaTotal
-        };
-      },
+        calcularTotalesPorCategoria() {
+    const totalesPorCategoria = {};
+    const todasTransacciones = [...this.detalleGasto, ...this.nuevasTransacciones];
+
+    // Calcular totales para detalleGasto y nuevasTransacciones
+    todasTransacciones.forEach(gasto => {
+      if (!totalesPorCategoria[gasto.id_categoria]) {
+        totalesPorCategoria[gasto.id_categoria] = 0;
+      }
+      totalesPorCategoria[gasto.id_categoria] += parseFloat(gasto.monto);
+    });
+
+    // Calcular totales para agrupados por categoria
+    for (const categoria in this.agruparPorCategoria) {
+      const gastos = this.agruparPorCategoria[categoria];
+      if (!totalesPorCategoria[categoria]) {
+        totalesPorCategoria[categoria] = 0;
+      }
+      totalesPorCategoria[categoria] += gastos.reduce((total, gasto) => total + parseFloat(gasto.monto), 0);
+    }
+
+    const sumaTotal = Object.values(totalesPorCategoria).reduce((total, cantidad) => total + cantidad, 0);
+    return {
+      totalesPorCategoria,
+      sumaTotal
+    };
+  },
       //funcion totalgeneral para sumar el total de por categoria y el total de la tablita  de totales por banco
       totalGeneral() {
       const totalMonto = Object.values(this.agruparPorBanco).reduce((total, transacciones) => {
@@ -569,20 +605,26 @@
       return total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     },
     
-  
     devolverACategorias(gasto) {
-        for (const categoria in this.categorias) {
-          const index = this.categorias[categoria].indexOf(gasto);
-          if (index !== -1) {
-            this.categorias[categoria].splice(index, 1);
-            this.resultados2.push(gasto);
-            return; 
-          }
+      // Verifica si la categoría está presente en agruparPorCategoria
+      const categorias = Object.keys(this.agruparPorCategoria);
+      for (let i = 0; i < categorias.length; i++) {
+        const categoria = categorias[i];
+        const gastos = this.agruparPorCategoria[categoria];
+        // Busca el gasto dentro de los gastos de esta categoría
+        const index = gastos.findIndex(item => item.id_detalle_gasto === gasto.id_detalle_gasto);
+        if (index !== -1) {
+          // Remueve el gasto de la categoría actual
+          const gastoMovido = gastos.splice(index, 1)[0];
+          // Agrega el gasto movido al arreglo detalleGasto
+          this.detalleGasto.push(gastoMovido);
+          break; // Termina el ciclo una vez que se ha encontrado y movido el gasto
         }
-  
-      console.error(`El gasto no se encontró en ninguna categoría.`);
+      }
     },
 
+
+    
     guardarDatos() {
         const id_fecha = `${this.anioSeleccionado}${this.mesSeleccionado.toString().padStart(2, '0')}`;
         const createEndpoint = `${API_BASE_URL}admin/app.php/totalgastos`;
@@ -667,9 +709,123 @@
         },
 
 
-    cambiarEstado(adeudo) {
-    adeudo.estado = adeudo.estado === 1 ? 0 : 1; // Cambia el estado entre 0 y 1
-  },
+        cambiarEstado(adeudo) {
+          adeudo.estado = adeudo.estado === 1 ? 0 : 1;
+          // Añadir una bandera para indicar que el estado ha cambiado
+          adeudo.hasChanged = true;
+        },
+
+      async guardarDetalleGastos2() {
+      try {
+        const id_fecha = `${this.fechaInicio2.replace(/-/g, '').substring(0, 6)}`;
+        const dbm = this.dbm;
+        const getEndpoint = `${API_BASE_URL}admin/get.php/getdetallegasto?dbm=${this.dbm}&fecha=${this.id_fecha}`;
+        const updateEndpoint = `${API_BASE_URL}admin/get.php/detallegastosput`;
+
+        console.log('Verificando existencia de detalles de gastos...');
+        const response = await axios.get(getEndpoint, {
+          params: { dbm: dbm, fecha: id_fecha }
+        });
+        const existingData = response.data.data;
+
+        if (existingData.length > 0) {
+          let id_detalle_gasto = [];
+          let categoria = [];
+          let estado = [];
+
+          // Recorrer las tablas agrupadas por categoría para obtener los datos actualizados
+          for (let categoriaKey in this.agruparPorCategoria) {
+            this.agruparPorCategoria[categoriaKey].forEach(gasto => {
+              // Encontrar el detalle correspondiente en existingData por id_detalle_gasto
+              const detalleExistente = existingData.find(item => item.id_detalle_gasto === gasto.id_detalle_gasto);
+              if (detalleExistente) {
+                id_detalle_gasto.push(gasto.id_detalle_gasto);
+                categoria.push(gasto.id_categoria);
+                estado.push(detalleExistente.estado); // Usar estado existente desde existingData
+              }
+            });
+          }
+
+          const datosActualizar = {
+            id_detalle_gasto: id_detalle_gasto,
+            categoria: categoria,
+            estado: estado
+          };
+
+          console.log('Datos a actualizar:');
+          console.log(datosActualizar);
+
+          const updateResponse = await axios.put(updateEndpoint, datosActualizar);
+          console.log('Detalles de gastos actualizados exitosamente!!:', updateResponse.data);
+
+        } else {
+          this.guardadoExitosoDetalleGastos = true;
+        }
+      } catch (error) {
+        console.error('Error en la operación de guardar o actualizar detalles de gastos:', error);
+      }
+    },
+
+    async guardarDatosBancarios() {
+      try {
+        // Formatear el ID de la fecha
+        const id_fecha = `${this.fechaInicio2.replace(/-/g, '').substring(0, 6)}`;
+        const dbm = this.dbm;
+
+        // Endpoint para verificar la existencia de una configuración
+        const getEndpoint = `${API_BASE_URL}admin/get.php/getgastosbancos?dbm=${dbm}&fecha=${id_fecha}`;
+        const updateEndpoint = `${API_BASE_URL}admin/get.php/gastosbancosput`;
+
+        console.log('Verificando existencia de configuración...');
+        const response = await axios.get(getEndpoint, {
+          params: { dbm: dbm, fecha: id_fecha }
+        });
+        const existingData = response.data.data;
+
+        if (existingData.length > 0) {
+          const datosActualizar = {
+            id_gastos_bancos: [],
+            estado: []
+          };
+
+          // Recorrer todas las transacciones agrupadas por banco
+          for (let banco in this.agruparPorBanco) {
+            let transacciones = this.agruparPorBanco[banco];
+            
+            transacciones.forEach(transaccion => {
+              datosActualizar.id_gastos_bancos.push(transaccion.id_gastos_bancos);
+              if (transaccion.hasChanged) {
+                datosActualizar.estado.push(transaccion.estado);
+              } else {
+                const transaccionExistente = existingData.find(item => item.id_gastos_bancos === transaccion.id_gastos_bancos);
+                if (transaccionExistente) {
+                  datosActualizar.estado.push(transaccionExistente.estado);
+                }
+              }
+            });
+          }
+
+          console.log('Datos a actualizar:');
+          console.log('id_gastos_bancos:', datosActualizar.id_gastos_bancos);
+          console.log('estado:', datosActualizar.estado);
+
+          const updateResponse = await axios.put(updateEndpoint, datosActualizar);
+          console.log('Datos actualizados exitosamente:', updateResponse.data);
+          this.guardadoExitosoBancos = true;
+        } else {
+          console.log('No se encontró configuración existente.');
+          this.guardadoExitosoBancos = false;
+        }
+      } catch (error) {
+        console.error('Error en la operación de guardar o actualizar datos:', error);
+        this.guardadoExitosoBancos = false;
+      }
+    }
+
+
+    
+
+
 
   
     },
